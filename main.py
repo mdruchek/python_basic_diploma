@@ -11,7 +11,7 @@ def get_text_messages(message):
     elif message.text == "/help":
         bot.send_message(message.from_user.id, "Напиши привет")
     elif message.text == "/hello word":
-        bot.send_message(message.from_user.id , "hellow word")
+        bot.send_message(message.from_user.id , "hello word")
     else:
         bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help.")
 
