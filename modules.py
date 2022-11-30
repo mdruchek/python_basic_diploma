@@ -10,14 +10,16 @@ def checking_existence_file(func) -> Callable:
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        try:
-            if os.path.exists(kwargs['path']):
-                result: Callable = func(*args, **kwargs)
-                return result
-            else:
-                raise FileNotFoundError
-        except FileNotFoundError:
-            print('Ошибка: Файл "{file}" не найден в корневой папке программы'.format(file=kwargs['path']))
+        if os.path.exists(kwargs['path']):
+            result: Callable = func(*args, **kwargs)
+            return result
+        else:
+            config = configparser.ConfigParser()
+            with open('config.ini', 'w') as file_config:
+                token = input('Конфигурационный файл "config.ini" отсутствует,\n'
+                              'чтобы его создать введите токен Телеграмм-бота: ')
+                config['account'] = {'token_bot': token}
+                config.write(file_config)
     return wrapper
 
 
