@@ -1,29 +1,6 @@
-import configparser
-import os
-import functools
-from typing import Callable
+from configparser import ConfigParser
 
 
-def checking_existence_file(func) -> Callable:
-    """
-    Декоратор для проверки существования файла
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if os.path.exists(kwargs['path']):
-            result: Callable = func(*args, **kwargs)
-            return result
-        else:
-            config = configparser.ConfigParser()
-            with open('config.ini', 'w') as file_config:
-                token = input('Конфигурационный файл "config.ini" отсутствует,\n'
-                              'чтобы его создать введите токен Телеграмм-бота: ')
-                config['account'] = {'token_bot': token}
-                config.write(file_config)
-    return wrapper
-
-
-@checking_existence_file
 def get_config_from_file(path: str, section: str, setting: str):
     """
     Функция чтения параметров из конфигурационного файла
@@ -40,9 +17,18 @@ def get_config_from_file(path: str, section: str, setting: str):
     :return setting_in_file: настройка в файле .ini
     :rtype setting_in_file: str
     """
-    config = configparser.ConfigParser()
+
+    config: ConfigParser = ConfigParser()
     config.read(path)
-    setting_in_file: str = config.get(section, setting)
+    setting_in_file: str = config.get(section, setting, fallback=False)
+    if not setting_in_file:
+        setting_in_file = input('В файле {path} отсутствует ключ {setting},\n'
+                                'введите его для записи: '.format(path=path[2:],
+                                                                  setting=setting))
+
+        if not config.has_section(section):
+            config.add_section(section)
+        config.set(section, setting, setting_in_file)
+        with open(path, 'w') as file_config:
+            config.write(file_config)
     return setting_in_file
-
-
