@@ -4,26 +4,24 @@ import functools
 from typing import Callable
 
 
-def checking_existence_file(path: str) -> Callable:
+def checking_existence_file(func) -> Callable:
     """
     Декоратор для проверки существования файла
     """
-    def decorator(func: Callable):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                if os.path.exists(path):
-                    result: Callable = func(*args, **kwargs)
-                    return result
-                else:
-                    raise FileNotFoundError
-            except FileNotFoundError:
-                print('Ошибка: Файл "{file}" не найден в корневой папке программы'.format(file=path[2:]))
-        return wrapper
-    return decorator
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            if os.path.exists(kwargs['path']):
+                result: Callable = func(*args, **kwargs)
+                return result
+            else:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            print('Ошибка: Файл "{file}" не найден в корневой папке программы'.format(file=kwargs['path']))
+    return wrapper
 
 
-@checking_existence_file(path='./config.ini')
+@checking_existence_file
 def get_config_from_file(path: str, section: str, setting: str):
     """
     Функция чтения параметров из конфигурационного файла
