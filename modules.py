@@ -85,5 +85,3 @@ class DataToShelve:
         """
         if os.path.exists(path):
             os.remove(path)
-        else:
-            raise FileExistsError('Файл {file} не существует.'.format(file=path))
