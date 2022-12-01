@@ -1,20 +1,17 @@
 import modules
 import telebot
 import lowprice
+import shelve
 
-
-def telegram_bot(token):
+if __name__ == '__main__':
+    token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
     my_bot: telebot.TeleBot = telebot.TeleBot(token)
-    telegram_bot.command_message_id = 0
-    telegram_bot.command = None
 
     @my_bot.message_handler(commands=['lowprice'])
     def lowprice_command(message) -> None:
         """
         Функция для вывода самых дешёвых отелей
         """
-        telegram_bot.command = message.text
-        telegram_bot.command_message_id = message.id
         my_bot.reply_to(message, "В каком городе ищем?")
 
     @my_bot.message_handler(commands=['highprice'])
@@ -22,8 +19,6 @@ def telegram_bot(token):
         """
         Функция для вывода самых дорогих отелей
         """
-        telegram_bot.command_message_id = message.id
-        telegram_bot.command = message.text
         my_bot.reply_to(message, "В каком городе ищем?")
 
     @my_bot.message_handler(commands=['bestdeal'])
@@ -31,8 +26,6 @@ def telegram_bot(token):
         """
         Функция для вывода отелей, наиболее подходящих по цене и расположению от центра
         """
-        telegram_bot.command_message_id = message.id
-        telegram_bot.command = message.text
         my_bot.reply_to(message, "В каком городе ищем?")
 
     @my_bot.message_handler(commands=['history'])
@@ -40,8 +33,6 @@ def telegram_bot(token):
         """
         Функция для вывода вывод истории поиска отелей
         """
-        telegram_bot.command_message_id = message.id
-        telegram_bot.command = message.text
         my_bot.reply_to(message.from_user.id, "В каком городе ищем?")
 
     @my_bot.message_handler(commands=['help'])
@@ -61,17 +52,13 @@ def telegram_bot(token):
         """
         Функция обработки остального текста
         """
-        if message.id == telegram_bot.command_message_id + 2:
-            if telegram_bot.command == '/lowprice':
-                my_bot.reply_to(message, lowprice.Lowprice.get_location_city(message.text))
-            else:
-                my_bot.reply_to(message, 'функция в разработке')
+
+        if telegram_bot.command == '/lowprice':
+            my_bot.reply_to(message, lowprice.Lowprice.get_location_city(message.text))
         else:
-            my_bot.reply_to(message, 'Я Вас не понимаю, введите /help')
+            my_bot.reply_to(message, 'функция в разработке')
+        my_bot.reply_to(message, 'Я Вас не понимаю, введите /help')
 
     my_bot.infinity_poling()
 
 
-if __name__ == '__main__':
-    token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
-    telegram_bot(token)
