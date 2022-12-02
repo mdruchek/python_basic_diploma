@@ -56,30 +56,51 @@ class UserSurvey:
 
     def __init__(self):
         self.__command: str = ''
-        self.__command_number = 0
+        self.__command_number = -1
         self.__answers = dict()
 
     @property
     def command(self):
         return self.__command
 
+    @property
+    def command_number(self):
+        return self.__command_number
+
+    @property
+    def city(self):
+        return self.__answers['city']
+
+    @property
+    def price(self):
+        return self.__answers['price']
+
+    @property
+    def distance(self):
+        return self.__answers['distance']
+
+    @property
+    def number_hotels(self):
+        return self.__answers['number_hotels']
+
+    @property
+    def uploading_photos(self):
+        return self.__answers['uploading_photos']
+
+    @property
+    def number_photos(self):
+        return self.__answers['number_photos']
+
     @command.setter
     def command(self, command):
-        self.__command = command
-        self.__command_number = 0
-        self.__city: str = ''
-        self.__price: List = [None, None]
-        self.__distance: List = [None, None]
-        self.__number_hotels: int = 0
-        self.__uploading_photos: bool = False
-        self.__number_photos: int = 0
+        self.reset_answers()
 
     def get_question(self):
+        self.__command_number += 1
         if self.__command_number > len(UserSurvey.__survey_list[self.__command]):
-            self.__command_number = 0
+            self.reset_answers()
             return False
         question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command_number]]
-        self.__command_number += 1
         return question
 
     def set_answer(self, answer):
