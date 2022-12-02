@@ -1,7 +1,9 @@
-import modules
-from modules import UserSurvey
 import telebot
 from telebot import types
+import modules
+from modules import UserSurvey
+from lowprice import Lowprice
+
 
 if __name__ == '__main__':
     token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
@@ -57,15 +59,13 @@ if __name__ == '__main__':
         Функция обработки остального текста
         """
 
-        if survey.:
-            command = DataToShelve.read_data_from_shelve(path='./data_commands', key='command')['command']
-            number_question: int = int(DataToShelve.read_data_from_shelve(path='./data_commands', key='number_question')['number_question'])
-            number_question += 1
-            print(number_question, type(number_question))
-            if command['command'] == '/lowprice' and number_question == 1:
-                number_question += 1
-                DataToShelve.adding_data_to_shelve(path='./data_commands', key='number_question', data=str(number_question))
-                my_bot.send_message(message.from_user.id, 'Cколько отелей вывести?')
+        if survey.command_number != 0:
+            survey.set_answer(message.text)
+            question = survey.get_question()
+            if question:
+                my_bot.send_message(message.from_user.id, question)
+            else:
+                Lowprice.get_location_city(survey.city)
         else:
             my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help')
 
