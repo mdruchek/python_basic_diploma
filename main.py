@@ -1,24 +1,21 @@
 import modules
-from modules import DataToShelve
+from modules import UserSurvey
 import telebot
 from telebot import types
-import lowprice
-import os
 
 if __name__ == '__main__':
     token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
     my_bot: telebot.TeleBot = telebot.TeleBot(token)
-    DataToShelve.remove_shelve('./data_commands')
+    survey = UserSurvey()
+
 
     @my_bot.message_handler(commands=['lowprice'])
     def lowprice_command(message) -> None:
         """
         Функция для вывода самых дешёвых отелей
         """
-        DataToShelve.remove_shelve('data_commands')
-        DataToShelve.adding_data_to_shelve(path='./data_commands', key='command', data=message.text)
-        DataToShelve.adding_data_to_shelve(path='./data_commands', key='number_question', data='1')
-        my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
+        survey.command = message.text
+        my_bot.send_message(message.from_user.id, survey.get_question())
 
 
     @my_bot.message_handler(commands=['highprice'])
@@ -60,7 +57,7 @@ if __name__ == '__main__':
         Функция обработки остального текста
         """
 
-        if os.path.exists('./data_commands'):
+        if survey.:
             command = DataToShelve.read_data_from_shelve(path='./data_commands', key='command')['command']
             number_question: int = int(DataToShelve.read_data_from_shelve(path='./data_commands', key='number_question')['number_question'])
             number_question += 1
