@@ -50,7 +50,7 @@ class UserSurvey:
                    '/highprice': [0, 3, 4],
                    '/bestdeal': [0, 1, 2, 3, 4]}
 
-    __answers_key = ('cyty', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
+    __answers_key = ('city', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
 
 
 
@@ -94,17 +94,18 @@ class UserSurvey:
     @command.setter
     def command(self, command):
         self.reset_answers()
+        self.__command = command
 
     def get_question(self):
         self.__command_number += 1
-        if self.__command_number > len(UserSurvey.__survey_list[self.__command]):
-            self.reset_answers()
+        if self.__command_number == len(UserSurvey.__survey_list[self.__command]):
+            self.__command_number = -1
             return False
-        question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command_number]]
+        question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command][self.__command_number]]
         return question
 
     def set_answer(self, answer):
-        self.__answers[self.__answers_key[self.__command_number] - 1] = answer
+        self.__answers[self.__answers_key[UserSurvey.__survey_list[self.__command][self.__command_number]]] = answer
 
     def reset_answers(self):
         self.__answers = dict()
