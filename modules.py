@@ -50,10 +50,10 @@ class UserSurvey:
                    '/highprice': [0, 3, 4],
                    '/bestdeal': [0, 1, 2, 3, 4]}
 
-    def __init__(self, command):
-        self.__command: str = command
+    def __init__(self):
+        self.__command: str = ''
         self.__command_number = 0
-        self.__city: str = 'None'
+        self.__city: str = ''
         self.__price: List = [None, None]
         self.__distance: List = [None, None]
         self.__number_hotels: int = 0
@@ -91,6 +91,13 @@ class UserSurvey:
     @command.setter
     def command(self, command):
         self.__command = command
+        self.__command_number = 0
+        self.__city: str = ''
+        self.__price: List = [None, None]
+        self.__distance: List = [None, None]
+        self.__number_hotels: int = 0
+        self.__uploading_photos: bool = False
+        self.__number_photos: int = 0
 
     @city.setter
     def city(self, city):
@@ -118,6 +125,7 @@ class UserSurvey:
 
     def get_question(self):
         if self.__command_number > len(UserSurvey.__survey_list[self.__command]):
+            self.__command_number = 0
             return False
         question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command_number]]
         self.__command_number += 1
