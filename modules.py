@@ -50,43 +50,18 @@ class UserSurvey:
                    '/highprice': [0, 3, 4],
                    '/bestdeal': [0, 1, 2, 3, 4]}
 
+    __answers_key = ('cyty', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
+
+
+
     def __init__(self):
         self.__command: str = ''
         self.__command_number = 0
-        self.__city: str = ''
-        self.__price: List = [None, None]
-        self.__distance: List = [None, None]
-        self.__number_hotels: int = 0
-        self.__uploading_photos: bool = False
-        self.__number_photos: int = 0
+        self.__answers = dict()
 
     @property
     def command(self):
         return self.__command
-
-    @property
-    def city(self):
-        return self.__city
-
-    @property
-    def price(self):
-        return self.__price
-
-    @property
-    def distance(self):
-        return self.__distance
-
-    @property
-    def number_hotels(self):
-        return self.__number_hotels
-
-    @property
-    def uploading_photos(self):
-        return self.__uploading_photos
-
-    @property
-    def number_photos(self):
-        return self.__number_photos
 
     @command.setter
     def command(self, command):
@@ -99,30 +74,6 @@ class UserSurvey:
         self.__uploading_photos: bool = False
         self.__number_photos: int = 0
 
-    @city.setter
-    def city(self, city):
-        self.__city = city
-
-    @price.setter
-    def price(self, price):
-        self.__price = price
-
-    @distance.setter
-    def distance(self, distance):
-        self.__distance = distance
-
-    @number_hotels.setter
-    def number_hotels(self, number_hotels):
-        self.__number_hotels = number_hotels
-
-    @uploading_photos.setter
-    def uploading_photos(self, uploading_photos):
-        self.__uploading_photos = uploading_photos
-
-    @number_photos.setter
-    def number_photos(self, number_photos):
-        self.__number_photos = number_photos
-
     def get_question(self):
         if self.__command_number > len(UserSurvey.__survey_list[self.__command]):
             self.__command_number = 0
@@ -130,3 +81,9 @@ class UserSurvey:
         question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command_number]]
         self.__command_number += 1
         return question
+
+    def set_answer(self, answer):
+        self.__answers[self.__answers_key[self.__command_number] - 1] = answer
+
+    def reset_answers(self):
+        self.__answers = dict()
