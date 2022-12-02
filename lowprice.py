@@ -9,7 +9,6 @@ class Lowprice:
 	"""
 	@classmethod
 	def get_location_city(cls, city):
-		Lowprice.city = 'new york'
 		url = "https://hotels4.p.rapidapi.com/locations/v3/search"
 
 		querystring = {"q": city}
