@@ -1,24 +1,24 @@
 import modules
+from modules import DataToShelve
 import telebot
-from  telebot import types
+from telebot import types
 import lowprice
-import shelve
 import os
 
 if __name__ == '__main__':
     token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
     my_bot: telebot.TeleBot = telebot.TeleBot(token)
+    DataToShelve.remove_shelve('./data_commands')
 
     @my_bot.message_handler(commands=['lowprice'])
     def lowprice_command(message) -> None:
         """
         Функция для вывода самых дешёвых отелей
         """
-        if os.path.exists('./data_request'):
-            os.remove('./data_request')
-        shelve_bufer = shelve.open('./datarequest')
-        shelve_bufer['command'] = message
-        shelve_bufer.close()
+        DataToShelve.remove_shelve('data_commands')
+        DataToShelve.adding_data_to_shelve(path='./data_commands', key='command', data=message.text)
+        DataToShelve.adding_data_to_shelve(path='./data_commands', key='number_question', data='1')
+        my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
 
     @my_bot.message_handler(commands=['highprice'])
@@ -26,21 +26,21 @@ if __name__ == '__main__':
         """
         Функция для вывода самых дорогих отелей
         """
-        my_bot.send_message(message.from_user.id, "В каком городе ищем?")
+        my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
     @my_bot.message_handler(commands=['bestdeal'])
     def bestdeal_command(message) -> None:
         """
         Функция для вывода отелей, наиболее подходящих по цене и расположению от центра
         """
-        my_bot.send_message(message.from_user.id, "В каком городе ищем?")
+        my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
     @my_bot.message_handler(commands=['history'])
     def history_command(message) -> None:
         """
         Функция для вывода вывод истории поиска отелей
         """
-        my_bot.send_message(message.from_user.id, "В каком городе ищем?")
+        my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
     @my_bot.message_handler(commands=['help'])
     def help_command(message) -> None:
@@ -54,17 +54,23 @@ if __name__ == '__main__':
                                                   '/bestdeal - вывод отелей, наиболее подходящих по цене и расположению от центра\n'
                                                   '/history - вывод истории поиска отелей')
 
-    # @my_bot.message_handler(func=lambda text: True)
-    # def any_text(message) -> None:
-    #     """
-    #     Функция обработки остального текста
-    #     """
-    #
-    #     if telegram_bot.command == '/lowprice':
-    #         my_bot.reply_to(message, lowprice.Lowprice.get_location_city(message.text))
-    #     else:
-    #         my_bot.reply_to(message, 'функция в разработке')
-    #     my_bot.reply_to(message, 'Я Вас не понимаю, введите /help')
+    @my_bot.message_handler(func=lambda text: True)
+    def any_text(message) -> None:
+        """
+        Функция обработки остального текста
+        """
+
+        if os.path.exists('./data_commands'):
+            command = DataToShelve.read_data_from_shelve(path='./data_commands', key='command')['command']
+            number_question: int = int(DataToShelve.read_data_from_shelve(path='./data_commands', key='number_question')['number_question'])
+            number_question += 1
+            print(number_question, type(number_question))
+            if command['command'] == '/lowprice' and number_question == 1:
+                number_question += 1
+                DataToShelve.adding_data_to_shelve(path='./data_commands', key='number_question', data=str(number_question))
+                my_bot.send_message(message.from_user.id, 'Cколько отелей вывести?')
+        else:
+            my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help')
 
     my_bot.polling(non_stop=True)
 
