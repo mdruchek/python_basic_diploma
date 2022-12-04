@@ -58,16 +58,21 @@ if __name__ == '__main__':
         """
         Функция обработки остального текста
         """
-
+        markup = types.ReplyKeyboardRemove()
         if survey.command_number != -1:
             survey.set_answer(message.text)
             question = survey.get_question()
             if question:
-                my_bot.send_message(message.from_user.id, question)
+                if question == 'Загрузить фотографи?':
+                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                    itembty = types.KeyboardButton('Да')
+                    itembtn = types.KeyboardButton('Нет')
+                    markup.add(itembty, itembtn)
+                my_bot.send_message(message.from_user.id, question, reply_markup=markup)
             else:
-                my_bot.send_message(message.from_user.id, Lowprice.get_location_city(survey.city))
+                my_bot.send_message(message.from_user.id, Lowprice.get_location_city(survey.city), reply_markup=markup)
         else:
-            my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help')
+            my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help', reply_markup=markup)
 
     my_bot.polling(non_stop=True)
 
