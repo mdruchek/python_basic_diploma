@@ -8,7 +8,8 @@ from lowprice import Lowprice
 if __name__ == '__main__':
     token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
     my_bot: telebot.TeleBot = telebot.TeleBot(token)
-    survey = UserSurvey()
+    users_id = dict()
+
 
 
     @my_bot.message_handler(commands=['lowprice'])
@@ -16,8 +17,9 @@ if __name__ == '__main__':
         """
         Функция для вывода самых дешёвых отелей
         """
-        survey.command = message.text
-        my_bot.send_message(message.from_user.id, survey.get_question())
+        users_id[message.from_user.id] = UserSurvey()
+        users_id[message.from_user.id].command = message.text
+        my_bot.send_message(message.from_user.id, users_id[message.from_user.id].get_question())
 
 
     @my_bot.message_handler(commands=['highprice'])
@@ -59,9 +61,9 @@ if __name__ == '__main__':
         Функция обработки остального текста
         """
         markup = types.ReplyKeyboardRemove()
-        if survey.command_number != -1:
-            survey.set_answer(message.text)
-            question = survey.get_question()
+        if users_id[message.from_user.id].command_number != -1:
+            users_id[message.from_user.id].set_answer(message.text)
+            question = users_id[message.from_user.id].get_question()
             if question:
                 if question == 'Загрузить фотографи?':
                     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -70,7 +72,7 @@ if __name__ == '__main__':
                     markup.add(itembty, itembtn)
                 my_bot.send_message(message.from_user.id, question, reply_markup=markup)
             else:
-                my_bot.send_message(message.from_user.id, Lowprice.get_location_city(survey.city), reply_markup=markup)
+                my_bot.send_message(message.from_user.id, users_id[message.from_user.id].city, reply_markup=markup)
         else:
             my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help', reply_markup=markup)
 
