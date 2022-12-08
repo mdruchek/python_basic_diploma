@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 import modules
 from modules import UserSurvey
-from lowprice import Lowprice
+from modules import Requests
 
 
 if __name__ == '__main__':
@@ -10,16 +10,16 @@ if __name__ == '__main__':
     my_bot: telebot.TeleBot = telebot.TeleBot(token)
     users_id = dict()
 
-
-
     @my_bot.message_handler(commands=['lowprice'])
     def lowprice_command(message) -> None:
         """
         Функция для вывода самых дешёвых отелей
         """
-        users_id[message.from_user.id] = UserSurvey()
-        users_id[message.from_user.id].command = message.text
-        my_bot.send_message(message.from_user.id, users_id[message.from_user.id].get_question())
+        markup = types.ReplyKeyboardRemove()
+        users_id[message.from_user.id] = dict()
+        users_id[message.from_user.id]['survey']: UserSurvey = UserSurvey()
+        users_id[message.from_user.id]['survey'].command = message.text
+        my_bot.send_message(message.from_user.id, users_id[message.from_user.id]['survey'].get_question(), reply_markup=markup)
 
 
     @my_bot.message_handler(commands=['highprice'])
@@ -28,6 +28,9 @@ if __name__ == '__main__':
         Функция для вывода самых дорогих отелей
         """
         my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
+        """
+        В работе
+        """
 
     @my_bot.message_handler(commands=['bestdeal'])
     def bestdeal_command(message) -> None:
@@ -35,6 +38,9 @@ if __name__ == '__main__':
         Функция для вывода отелей, наиболее подходящих по цене и расположению от центра
         """
         my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
+        """
+        В работе
+        """
 
     @my_bot.message_handler(commands=['history'])
     def history_command(message) -> None:
@@ -42,8 +48,11 @@ if __name__ == '__main__':
         Функция для вывода вывод истории поиска отелей
         """
         my_bot.send_message(message.from_user.id, 'В каком городе ищем?')
+        """
+        В работе
+        """
 
-    @my_bot.message_handler(commands=['help'])
+    @my_bot.message_handler(commands=['help', 'start'])
     def help_command(message) -> None:
         """
         Функция для вывода справки по функциям
@@ -61,9 +70,9 @@ if __name__ == '__main__':
         Функция обработки остального текста
         """
         markup = types.ReplyKeyboardRemove()
-        if users_id[message.from_user.id].command_number != -1:
-            users_id[message.from_user.id].set_answer(message.text)
-            question = users_id[message.from_user.id].get_question()
+        if users_id[message.from_user.id]['survey'].command_number != -1:
+            users_id[message.from_user.id]['survey'].set_answer(message.text)
+            question = users_id[message.from_user.id]['survey'].get_question()
             if question:
                 if question == 'Загрузить фотографи?':
                     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -72,7 +81,16 @@ if __name__ == '__main__':
                     markup.add(itembty, itembtn)
                 my_bot.send_message(message.from_user.id, question, reply_markup=markup)
             else:
-                my_bot.send_message(message.from_user.id, users_id[message.from_user.id].city, reply_markup=markup)
+                users_id[message.from_user.id]['request']: Requests = Requests(command=users_id[message.from_user.id]['survey'].command,
+                                                                               city=users_id[message.from_user.id]['survey'].city,
+                                                                               check_in_date=None,
+                                                                               check_out_date=None,
+                                                                               result_size=users_id[message.from_user.id]['survey'].number_hotels)
+
+                result_request = users_id[message.from_user.id]['request'].properties_list()
+                my_bot.send_message(message.from_user.id, 'Вот что я нашёл для Вас:')
+                for hotel in result_request:
+                    my_bot.send_message(message.from_user.id, 'Отель: {name}'.format(name=hotel['mane']))
         else:
             my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help', reply_markup=markup)
 
