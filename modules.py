@@ -112,64 +112,70 @@ class UserSurvey:
 
 
 class Requests:
-    __x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
 
-    @classmethod
-    def get_meta_data(cls, city):
+    def __init__(self, command, city, check_in_date, check_out_date, result_size):
+        self._x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
+
+        if command == 'lowprice' or 'bestdeal':
+            self.__sort = 'PRICE_LOW_TO_HIGH'
+        if command == 'highprice':
+            self.__sort = 'PRICE_HIGH_TO_LOW'
+        self.__city = city
+        self.__result_size = result_size
+        self.__location_dict = dict()
+        self.__meta_data_dict = dict()
+        self.__properties_list = []
+        self.__properties_detail_dict = dict()
+
+    @property
+    def properties_list(self):
+        self.__get_location_search()
+        self.__get_meta_data()
+        self.__get_properties_list()
+        self.__add_properties_details_dict()
+        return self.__properties_list
+
+    def __get_meta_data(self):
         url = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
-
         headers = {
-            "X-RapidAPI-Key": Requests.__x_rapid_api_host,
+            "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
-
         response = requests.request("GET", url, headers=headers)
-        location_dict = Requests.get_location_search(city=city)
-        meta_data_dict = json.loads(response.text)[location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+        self.__meta_data_dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
 
         with open('meta_data.json', 'w') as file:
-            json.dump(meta_data_dict, file, indent=4)
+            json.dump(self.__meta_data_dict, file, indent=4)
 
-        return meta_data_dict, location_dict
-
-    @classmethod
-    def get_location_search(cls, city):
-
+    def __get_location_search(self):
         url = "https://hotels4.p.rapidapi.com/locations/v3/search"
-
-        querystring = {"q": city}
-
+        querystring = {"q": self.__city}
         headers = {
-            "X-RapidAPI-Key": Requests.__x_rapid_api_host,
+            "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
-
         response = requests.request("GET",
                                     url,
                                     headers=headers,
                                     params=querystring)
-
         locations_dict = json.loads(response.text)
-
         for location in locations_dict["sr"]:
             if location['type'] == 'CITY':
 
                 with open('location_search_city_only.json', 'w') as file:
                     json.dump(location, file, indent=4)
 
-                return location
+                self.__location_dict = location
+                break
 
-    @classmethod
-    def properties_list(cls, city, check_in_date, check_out_date, result_size, sort):
-        meta_data_dict, location_dict = Requests.get_meta_data(city=city)
+    def __get_properties_list(self):
         url = "https://hotels4.p.rapidapi.com/properties/v2/list"
-
         payload = {
             "currency": "USD",
             "eapid": 1,
             "locale": "en_US",
-            "siteId": meta_data_dict['siteId'],
-            "destination": {"regionId": location_dict['gaiaId']},
+            "siteId": self.__meta_data_dict['siteId'],
+            "destination": {"regionId": self.__location_dict['gaiaId']},
             "checkInDate": {
                 "day": 20,
                 "month": 12,
@@ -187,21 +193,38 @@ class Requests:
                 }
             ],
             "resultsStartingIndex": 0,
-            "resultsSize": int(result_size),
-            "sort": sort,
+            "resultsSize": self.__result_size,
+            "sort": self.__sort,
             "filters": {}
         }
 
         headers = {
             "content-type": "application/json",
-            "X-RapidAPI-Key": Requests.__x_rapid_api_host,
+            "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response = requests.request("POST", url, json=payload, headers=headers)
-
-        properties_list = json.loads(response.text)['data']['propertySearch']['properties']
+        self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
 
         with open('properties_list.json', 'w') as file:
-            json.dump(properties_list, file, indent=4)
+            json.dump(self.__properties_list, file, indent=4)
 
-        return properties_list
+    def __add_properties_details_dict(self):
+        for hotel_properties in self.__properties_list:
+            url = "https://hotels4.p.rapidapi.com/properties/v2/detail"
+            payload = {
+                "currency": "USD",
+                "eapid": 1,
+                "locale": "en_US",
+                "siteId": self.__meta_data_dict['siteId'],
+                "propertyId": hotel_properties['id']
+            }
+            headers = {
+                "content-type": "application/json",
+                "X-RapidAPI-Key": "88a3522203msh79eff6bb28fc328p19ed4cjsn9663c16737d2",
+                "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
+            }
+
+            response = requests.request("POST", url, json=payload, headers=headers)
+            hotel_details = json.loads(response.text)
+            hotel_properties['details'] = hotel_details
