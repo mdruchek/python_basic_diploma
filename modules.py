@@ -39,32 +39,49 @@ def get_config_from_file(path: str, section: str, setting: str):
 
 class UserSurvey:
     """
-    Класс опрос пользователя
+    Класс опрос пользователя:
+    Выдаёт по одному вопросу и записывает ответы в словарь
+
+    Attributes:
+        __questions (tuple): вопросы
+        __survey_list (dict): содержит индексы вопросов (в __question), в соответствии с командой бота
+        __answer_key (tuple): содержит ключи для записи вопросов в __answers (порядок соответствует порядку вопросов)
     """
-    __questions = ('В каком городе ищем?',
-                   'В каком диапазоне цен искать?',
-                   'Какое расстояние от центра Вас устроит?',
-                   'Сколько отелей вывести?',
-                   'Загрузить фотографи?',
-                   'Сколько фотографий загрузить?')
+    __questions: tuple = ('В каком городе ищем?',
+                          'В каком диапазоне цен искать?',
+                          'Какое расстояние от центра Вас устроит?',
+                          'Сколько отелей вывести?',
+                          'Загрузить фотографи?',
+                          'Сколько фотографий загрузить?')
 
-    __survey_list = {'/lowprice': [0, 3, 4],
-                     '/highprice': [0, 3, 4],
-                     '/bestdeal': [0, 1, 2, 3, 4]}
+    __survey_list: dict = {'/lowprice': [0, 3, 4],
+                           '/highprice': [0, 3, 4],
+                           '/bestdeal': [0, 1, 2, 3, 4]}
 
-    __answers_key = ('city', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
+    __answers_key: tuple = ('city', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
 
     def __init__(self):
         self.__command: str = ''
-        self.__command_number = -1
-        self.__answers = dict()
+        self.__command_number: int = -1
+        self.__answers: dict = dict()
 
     @property
-    def command(self):
+    def command(self) -> str:
+        """
+        Геттер для вывода команды
+
+        :return __command: команда бота
+        :rtype __command: str
+        """
         return self.__command
 
     @property
     def command_number(self):
+        """
+        Геттер для вывода номера вопроса
+
+        :return:
+        """
         return self.__command_number
 
     @property
@@ -121,7 +138,7 @@ class Requests:
         if command == 'highprice':
             self.__sort = 'PRICE_HIGH_TO_LOW'
         self.__city = city
-        self.__result_size = result_size
+        self.__result_size = int(result_size)
         self.__location_dict = dict()
         self.__meta_data_dict = dict()
         self.__properties_list = []
@@ -133,19 +150,25 @@ class Requests:
         self.__get_meta_data()
         self.__get_properties_list()
         self.__add_properties_details_dict()
+
+        with open('meta_data.json', 'w') as file:
+            json.dump(self.__meta_data_dict, file, indent=4)
+
+        with open('properties_list.json', 'a') as file:
+            for proper in self.__properties_list:
+                json.dump(proper, file, indent=4)
+
         return self.__properties_list
 
     def __get_meta_data(self):
         url = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
+
         headers = {
             "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response = requests.request("GET", url, headers=headers)
         self.__meta_data_dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
-
-        with open('meta_data.json', 'w') as file:
-            json.dump(self.__meta_data_dict, file, indent=4)
 
     def __get_location_search(self):
         url = "https://hotels4.p.rapidapi.com/locations/v3/search"
@@ -206,9 +229,6 @@ class Requests:
         response = requests.request("POST", url, json=payload, headers=headers)
         self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
 
-        with open('properties_list.json', 'w') as file:
-            json.dump(self.__properties_list, file, indent=4)
-
     def __add_properties_details_dict(self):
         for hotel_properties in self.__properties_list:
             url = "https://hotels4.p.rapidapi.com/properties/v2/detail"
@@ -221,7 +241,7 @@ class Requests:
             }
             headers = {
                 "content-type": "application/json",
-                "X-RapidAPI-Key": "88a3522203msh79eff6bb28fc328p19ed4cjsn9663c16737d2",
+                "X-RapidAPI-Key": self._x_rapid_api_host,
                 "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
             }
 
