@@ -76,11 +76,11 @@ class UserSurvey:
         return self.__command
 
     @property
-    def command_number(self):
+    def question_number(self):
         """
         Геттер для вывода номера вопроса
 
-        :return:
+        :return :
         """
         return self.__question_number
 

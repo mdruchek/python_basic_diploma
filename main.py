@@ -70,7 +70,7 @@ if __name__ == '__main__':
         Функция обработки остального текста
         """
         markup = types.ReplyKeyboardRemove()
-        if users_id[message.from_user.id]['survey'].command_number != -1:
+        if users_id[message.from_user.id]['survey'].question_number != -1:
             users_id[message.from_user.id]['survey'].set_answer(message.text)
             question = users_id[message.from_user.id]['survey'].get_question()
             if question:
@@ -95,5 +95,4 @@ if __name__ == '__main__':
             my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help', reply_markup=markup)
 
     my_bot.polling(non_stop=True)
-
 
