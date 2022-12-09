@@ -62,7 +62,7 @@ class UserSurvey:
 
     def __init__(self):
         self.__command: str = ''
-        self.__command_number: int = -1
+        self.__question_number: int = -1
         self.__answers: dict = dict()
 
     @property
@@ -82,7 +82,7 @@ class UserSurvey:
 
         :return:
         """
-        return self.__command_number
+        return self.__question_number
 
     @property
     def city(self):
@@ -114,15 +114,15 @@ class UserSurvey:
         self.__command = command
 
     def get_question(self):
-        self.__command_number += 1
-        if self.__command_number == len(UserSurvey.__survey_list[self.__command]):
-            self.__command_number = -1
+        self.__question_number += 1
+        if self.__question_number == len(UserSurvey.__survey_list[self.__command]):
+            self.__question_number = -1
             return False
-        question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command][self.__command_number]]
+        question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command][self.__question_number]]
         return question
 
     def set_answer(self, answer):
-        self.__answers[self.__answers_key[UserSurvey.__survey_list[self.__command][self.__command_number]]] = answer
+        self.__answers[self.__answers_key[UserSurvey.__survey_list[self.__command][self.__question_number]]] = answer
 
     def reset_answers(self):
         self.__answers = dict()
