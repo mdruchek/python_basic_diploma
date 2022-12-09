@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from typing import List
+from typing import List, Dict
 import json
 import requests
 
@@ -76,44 +76,87 @@ class UserSurvey:
         return self.__command
 
     @property
-    def question_number(self):
+    def question_number(self) -> int:
         """
         Геттер для вывода номера вопроса
 
-        :return :
+        :return __question_number: номер текущего вопроса
+        :rtype __question_number: int
         """
         return self.__question_number
 
     @property
-    def city(self):
+    def city(self) -> str:
+        """
+        Геттер для вывода города
+
+        :return __ansvers['city']: город поиска
+        :rtype __answers['city']: str
+        """
         return self.__answers['city']
 
     @property
-    def price(self):
+    def price(self) -> List:
+        """
+        Геттер для вывода диапазона цен
+
+        :return __answer['price']: диапазон цен
+        :rtype __answer['price]: List[min, max]
+        """
         return self.__answers['price']
 
     @property
-    def distance(self):
+    def distance(self) -> List:
+        """
+        Геттер для вывода диапазона расстояния от центра
+
+        :return __answers['distance']: диапазон расстояния
+        :rtype __answers['distance']: List[min, max]
+        """
         return self.__answers['distance']
 
     @property
-    def number_hotels(self):
+    def number_hotels(self) -> str:
+        """
+        Геттер для возврата количества выводимых ботом отелей
+
+        :return __answers['number_hotels']: количество отелей
+        :rtype __answers['number_hotels']: str
+        """
+
         return self.__answers['number_hotels']
 
     @property
     def uploading_photos(self):
+        """
+        Геттер для вывода необходимости загрузки фото
+        """
         return self.__answers['uploading_photos']
 
     @property
-    def number_photos(self):
+    def number_photos(self) -> str:
+        """
+        Геттер для вывода количества загружаемых фото
+        """
         return self.__answers['number_photos']
 
     @command.setter
-    def command(self, command):
+    def command(self, command: str):
+        """
+        Сеттер для записи команды боту
+
+        :param command (str): команда
+        """
         self.reset_answers()
         self.__command = command
 
     def get_question(self):
+        """
+        Метод для выдачи вопросов по одному, по порядку в __questions, один за обращение к методу
+
+        :return question: вопрос
+        :rtype question: str
+        """
         self.__question_number += 1
         if self.__question_number == len(UserSurvey.__survey_list[self.__command]):
             self.__question_number = -1
@@ -121,31 +164,55 @@ class UserSurvey:
         question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command][self.__question_number]]
         return question
 
-    def set_answer(self, answer):
+    def set_answer(self, answer: str) -> None:
+        """
+        Метод записи ответов в __answers
+        :param answer (str): ответ
+        """
+
         self.__answers[self.__answers_key[UserSurvey.__survey_list[self.__command][self.__question_number]]] = answer
 
-    def reset_answers(self):
+    def reset_answers(self) -> None:
+        """
+        Метод для обнуления словаря с вопросами
+        """
         self.__answers = dict()
 
 
 class Requests:
+    """
+    Класс, реализующий необходимые запросы к API
 
-    def __init__(self, command, city, check_in_date, check_out_date, result_size):
+    Args:
+        command (str): команда к боту
+        city (str): город для поиска
+        check_in_date (?): дата заезда
+        check_out_date (?): дата выезда
+        result_size (str): количество результатов поиска
+    """
+
+    def __init__(self, command: str, city: str, check_in_date, check_out_date, result_size: str):
         self._x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
 
         if command == 'lowprice' or 'bestdeal':
-            self.__sort = 'PRICE_LOW_TO_HIGH'
+            self.__sort: str = 'PRICE_LOW_TO_HIGH'
         if command == 'highprice':
-            self.__sort = 'PRICE_HIGH_TO_LOW'
-        self.__city = city
-        self.__result_size = int(result_size)
-        self.__location_dict = dict()
-        self.__meta_data_dict = dict()
-        self.__properties_list = []
-        self.__properties_detail_dict = dict()
+            self.__sort: str = 'PRICE_HIGH_TO_LOW'
+        self.__city: str = city
+        self.__result_size: int = int(result_size)
+        self.__location_dict: Dict = dict()
+        self.__meta_data_dict: Dict = dict()
+        self.__properties_list: List = []
+        self.__properties_detail_dict: Dict = dict()
 
     @property
-    def properties_list(self):
+    def properties_list(self) -> List:
+        """
+        Геттер выполняет все запросы и возвращает список отелей
+
+        :return __properties_list:
+        """
+
         self.__get_location_search()
         self.__get_meta_data()
         self.__get_properties_list()
@@ -160,28 +227,42 @@ class Requests:
 
         return self.__properties_list
 
-    def __get_meta_data(self):
-        url = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
+    def __get_meta_data(self) -> None:
+        """
+        Метод выполняет запрос v2/get-meta-data
+        Данные страны
+        """
 
-        headers = {
+        url: str = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
+
+        headers: Dict = {
             "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
-        response = requests.request("GET", url, headers=headers)
-        self.__meta_data_dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
 
-    def __get_location_search(self):
-        url = "https://hotels4.p.rapidapi.com/locations/v3/search"
-        querystring = {"q": self.__city}
-        headers = {
+        response: requests = requests.request("GET", url, headers=headers)
+        self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+
+    def __get_location_search(self) -> None:
+        """
+        Метод выполняет запрос locations/v3/search
+        Данные города
+        """
+
+        url: str = "https://hotels4.p.rapidapi.com/locations/v3/search"
+        querystring: Dict = {"q": self.__city}
+
+        headers: Dict = {
             "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
-        response = requests.request("GET",
-                                    url,
-                                    headers=headers,
-                                    params=querystring)
-        locations_dict = json.loads(response.text)
+
+        response: requests = requests.request("GET",
+                                              url,
+                                              headers=headers,
+                                              params=querystring)
+
+        locations_dict: Dict = json.loads(response.text)
         for location in locations_dict["sr"]:
             if location['type'] == 'CITY':
 
@@ -191,9 +272,14 @@ class Requests:
                 self.__location_dict = location
                 break
 
-    def __get_properties_list(self):
-        url = "https://hotels4.p.rapidapi.com/properties/v2/list"
-        payload = {
+    def __get_properties_list(self) -> None:
+        """
+        Метод выполняет запрос properties/v2/list
+        Поиск отелей
+        """
+
+        url: str = "https://hotels4.p.rapidapi.com/properties/v2/list"
+        payload: Dict = {
             "currency": "USD",
             "eapid": 1,
             "locale": "en_US",
@@ -221,30 +307,38 @@ class Requests:
             "filters": {}
         }
 
-        headers = {
+        headers: Dict = {
             "content-type": "application/json",
             "X-RapidAPI-Key": self._x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response: requests = requests.request("POST", url, json=payload, headers=headers)
         self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
 
-    def __add_properties_details_dict(self):
+    def __add_properties_details_dict(self) -> None:
+        """
+        Метод выполняет запрос properties/v2/list
+        Поиск подробностей по отелям.
+        Добавляет детали к __properties_list.
+        """
+
         for hotel_properties in self.__properties_list:
-            url = "https://hotels4.p.rapidapi.com/properties/v2/detail"
-            payload = {
+            url: str = "https://hotels4.p.rapidapi.com/properties/v2/detail"
+
+            payload: Dict = {
                 "currency": "USD",
                 "eapid": 1,
                 "locale": "en_US",
                 "siteId": self.__meta_data_dict['siteId'],
                 "propertyId": hotel_properties['id']
             }
-            headers = {
+
+            headers: Dict = {
                 "content-type": "application/json",
                 "X-RapidAPI-Key": self._x_rapid_api_host,
                 "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
             }
 
-            response = requests.request("POST", url, json=payload, headers=headers)
-            hotel_details = json.loads(response.text)
-            hotel_properties['details'] = hotel_details
+            response: requests = requests.request("POST", url, json=payload, headers=headers)
+            hotel_details: Dict = json.loads(response.text)
+            hotel_properties['details']: Dict = hotel_details
