@@ -87,10 +87,12 @@ if __name__ == '__main__':
                                                                                check_out_date=None,
                                                                                result_size=users_id[message.from_user.id]['survey'].number_hotels)
 
-                result_request = users_id[message.from_user.id]['request'].properties_list()
+                result_request = users_id[message.from_user.id]['request'].properties_list
                 my_bot.send_message(message.from_user.id, 'Вот что я нашёл для Вас:')
                 for hotel in result_request:
-                    my_bot.send_message(message.from_user.id, 'Отель: {name}'.format(name=hotel['mane']))
+                    my_bot.send_message(message.from_user.id, 'Отель: {name}\n'
+                                                              'Адрес: {address}'.format(name=hotel['name'],
+                                                                                        address=hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine']))
         else:
             my_bot.send_message(message.from_user.id, 'Я Вас не понимаю, введиет /help', reply_markup=markup)
 
