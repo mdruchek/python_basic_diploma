@@ -203,7 +203,6 @@ class Requests:
         self.__location_dict: Dict = dict()
         self.__meta_data_dict: Dict = dict()
         self.__properties_list: List = []
-        self.__properties_detail_dict: Dict = dict()
 
     @property
     def properties_list(self) -> List:
@@ -221,9 +220,8 @@ class Requests:
         with open('meta_data.json', 'w') as file:
             json.dump(self.__meta_data_dict, file, indent=4)
 
-        with open('properties_list.json', 'a') as file:
-            for proper in self.__properties_list:
-                json.dump(proper, file, indent=4)
+        with open('properties_list.json', 'w') as file:
+            json.dump(self.__properties_list, file, indent=4)
 
         return self.__properties_list
 
@@ -322,7 +320,7 @@ class Requests:
         Добавляет детали к __properties_list.
         """
 
-        for hotel_properties in self.__properties_list:
+        for index_hotel, hotel_properties in enumerate(self.__properties_list):
             url: str = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
             payload: Dict = {
@@ -340,5 +338,6 @@ class Requests:
             }
 
             response: requests = requests.request("POST", url, json=payload, headers=headers)
-            hotel_details: Dict = json.loads(response.text)
-            hotel_properties['details']: Dict = hotel_details
+            self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+
+
