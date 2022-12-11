@@ -184,22 +184,19 @@ class Requests:
     Класс, реализующий необходимые запросы к API
 
     Args:
-        command (str): команда к боту
         city (str): город для поиска
         check_in_date (?): дата заезда
         check_out_date (?): дата выезда
         result_size (str): количество результатов поиска
+        sort (str): тип сортировки результатов запроса
     """
 
-    def __init__(self, command: str, city: str, check_in_date, check_out_date, result_size: str):
+    def __init__(self, city: str, check_in_date, check_out_date, result_size: str, sort: str):
         self._x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
-
-        if command == 'lowprice' or 'bestdeal':
-            self.__sort: str = 'PRICE_LOW_TO_HIGH'
-        if command == 'highprice':
-            self.__sort: str = 'PRICE_HIGH_TO_LOW'
         self.__city: str = city
         self.__result_size: int = int(result_size)
+        self.__sort = sort
+
         self.__location_dict: Dict = dict()
         self.__meta_data_dict: Dict = dict()
         self.__properties_list: List = []
