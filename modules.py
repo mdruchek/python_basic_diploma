@@ -191,9 +191,11 @@ class Requests:
         sort (str): тип сортировки результатов запроса
     """
 
-    def __init__(self, city: str, check_in_date, check_out_date, result_size: str, sort: str):
+    def __init__(self, city: str, check_in_date: dict, check_out_date: dict, result_size: str, sort: str):
         self._x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
         self.__city: str = city
+        self.__check_in_date = check_in_date
+        self.__check_out_date = check_out_date
         self.__result_size: int = int(result_size)
         self.__sort = sort
 
@@ -276,19 +278,19 @@ class Requests:
         url: str = "https://hotels4.p.rapidapi.com/properties/v2/list"
         payload: Dict = {
             "currency": "USD",
-            "eapid": 1,
+            "eapid": self.__meta_data_dict["EAPID"],
             "locale": "en_US",
             "siteId": self.__meta_data_dict['siteId'],
             "destination": {"regionId": self.__location_dict['gaiaId']},
             "checkInDate": {
-                "day": 20,
-                "month": 12,
-                "year": 2022
+                "day": self.__check_in_date['day'],
+                "month": self.__check_in_date['month'],
+                "year": self.__check_in_date['year']
             },
             "checkOutDate": {
-                "day": 21,
-                "month": 12,
-                "year": 2022
+                "day": self.__check_out_date['day'],
+                "month": self.__check_out_date['month'],
+                "year": self.__check_out_date['year']
             },
             "rooms": [
                 {
