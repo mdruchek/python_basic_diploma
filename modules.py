@@ -205,6 +205,8 @@ class Requests:
         self.__result_size: int = int(result_size)
         self.__sort = sort
 
+        self.__currency = 'USD'
+        self.__locale = 'en_US'
         self.__location_dict: Dict = dict()
         self.__meta_data_dict: Dict = dict()
         self.__properties_list: List = []
@@ -283,9 +285,9 @@ class Requests:
 
         url: str = "https://hotels4.p.rapidapi.com/properties/v2/list"
         payload: Dict = {
-            "currency": "USD",
+            "currency": self.__currency,
             "eapid": self.__meta_data_dict["EAPID"],
-            "locale": "en_US",
+            "locale": self.__locale,
             "siteId": self.__meta_data_dict['siteId'],
             "destination": {"regionId": self.__location_dict['gaiaId']},
             "checkInDate": {
@@ -329,9 +331,9 @@ class Requests:
             url: str = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
             payload: Dict = {
-                "currency": "USD",
-                "eapid": 1,
-                "locale": "en_US",
+                "currency": self.__currency,
+                "eapid": self.__meta_data_dict["EAPID"],
+                "locale": self.__locale,
                 "siteId": self.__meta_data_dict['siteId'],
                 "propertyId": hotel_properties['id']
             }
