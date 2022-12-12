@@ -64,7 +64,18 @@ class UserSurvey:
                            '/highprice': [0, 1, 2, 3, 4, 5, 6, 9, 10],
                            '/bestdeal': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
 
-    __answers_key: tuple = ('city', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
+    __answers_key: tuple = ('city',
+                            'check_in_date_year',
+                            'check_in_date_month',
+                            'check_in_date_day',
+                            'check_out_date_year',
+                            'check_out_date_month',
+                            'check_out_date_day',
+                            'price',
+                            'distance',
+                            'number_hotels',
+                            'uploading_photos',
+                            'number_photos')
 
     def __init__(self):
         self.__command: str = ''
