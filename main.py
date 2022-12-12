@@ -3,6 +3,7 @@ from telebot import types
 import modules
 from modules import UserSurvey
 from modules import Requests
+import datetime
 
 
 if __name__ == '__main__':
@@ -79,6 +80,43 @@ if __name__ == '__main__':
                     itembty = types.KeyboardButton('Да')
                     itembtn = types.KeyboardButton('Нет')
                     markup.add(itembty, itembtn)
+
+                if 'год' in question:
+                    current_year = datetime.date.today().year
+                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                    itembt_cur_year = types.KeyboardButton(str(current_year))
+                    itembt_next_year = types.KeyboardButton(str(current_year + 1))
+                    markup.add(itembt_cur_year, itembt_next_year)
+
+                if 'month' in question:
+                    markup = types.ReplyKeyboardMarkup(row_resize_keyboard=True)
+                    itembt_january = types.KeyboardButton('Январь')
+                    itembt_february = types.KeyboardButton('Февраль')
+                    itembt_march = types.KeyboardButton('Март')
+                    itembt_april = types.KeyboardButton('Апрель')
+                    itembt_may = types.KeyboardButton('Май')
+                    itembt_june = types.KeyboardButton('Июнь')
+                    itembt_july = types.KeyboardButton('Июль')
+                    itembt_august = types.KeyboardButton('Август')
+                    itembt_september = types.KeyboardButton('Сентябрь')
+                    itembt_october = types.KeyboardButton('Октябрь')
+                    itembt_november = types.KeyboardButton('Ноябрь')
+                    itembt_december = types.KeyboardButton('Декабрь')
+                    markup.row(itembt_january, itembt_february, itembt_march, itembt_april)
+                    markup.row(itembt_may, itembt_june, itembt_july, itembt_august)
+                    markup.row(itembt_september, itembt_october, itembt_november, itembt_december)
+
+                if 'day' in question:
+                    markup = types.ReplyKeyboardMarkup(row_resize_keyboard=True)
+                    number_day = 0
+                    for _ in range(5):
+                        row_itembt = []
+                        for __ in range(7):
+                            number_day += 1
+                            row_itembt.append(types.KeyboardButton(str(number_day)))
+                        itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7 = row_itembt
+                        markup.row(itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7)
+
                 my_bot.send_message(message.from_user.id, question, reply_markup=markup)
             else:
                 if users_id[message.from_user.id]['survey'].command in ['lowprice', 'bestdeal']:
@@ -86,8 +124,8 @@ if __name__ == '__main__':
                 if users_id[message.from_user.id]['survey'].command == 'highprice':
                     sort = 'PRICE_HIGH_TO_LOW'
                 users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
-                                                                               check_in_date=None,
-                                                                               check_out_date=None,
+                                                                               check_in_date=users_id[message.from_user.id]['survey'].check_in_date,
+                                                                               check_out_date=users_id[message.from_user.id]['survey'].check_out_date,
                                                                                result_size=users_id[message.from_user.id]['survey'].number_hotels,
                                                                                sort=sort)
 
