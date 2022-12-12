@@ -81,11 +81,15 @@ if __name__ == '__main__':
                     markup.add(itembty, itembtn)
                 my_bot.send_message(message.from_user.id, question, reply_markup=markup)
             else:
-                users_id[message.from_user.id]['request']: Requests = Requests(command=users_id[message.from_user.id]['survey'].command,
-                                                                               city=users_id[message.from_user.id]['survey'].city,
+                if users_id[message.from_user.id]['survey'].command in ['lowprice', 'bestdeal']:
+                    sort = 'PRICE_LOW_TO_HIGH'
+                if users_id[message.from_user.id]['survey'].command == 'highprice':
+                    sort = 'PRICE_HIGH_TO_LOW'
+                users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
                                                                                check_in_date=None,
                                                                                check_out_date=None,
-                                                                               result_size=users_id[message.from_user.id]['survey'].number_hotels)
+                                                                               result_size=users_id[message.from_user.id]['survey'].number_hotels,
+                                                                               sort=sort)
 
                 result_request = users_id[message.from_user.id]['request'].properties_list
                 my_bot.send_message(message.from_user.id,
