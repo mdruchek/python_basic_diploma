@@ -113,6 +113,30 @@ class UserSurvey:
         return self.__answers['city']
 
     @property
+    def check_in_date(self) -> dict:
+        """
+        Геттер для вывода даты заезда
+
+        :return check_in_date: дата заезда
+        :rtype check_in_date: dict
+        """
+        return {'day': self.__answers['check_in_date_day'],
+                'month': self.__answers['check_in_date_month'],
+                'year': self.__answers['check_in date_year']}
+
+    @property
+    def check_out_date(self) -> dict:
+        """
+        Геттер для вывода даты выезда
+
+        :return check_out_date: дата выезда
+        :rtype check_out_date: dict
+        """
+        return {'day': self.__answers['check_out_date_day'],
+                'month': self.__answers['check_out_date_month'],
+                'year': self.__answers['check_out_date_year']}
+
+    @property
     def price(self) -> List:
         """
         Геттер для вывода диапазона цен
