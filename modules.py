@@ -43,14 +43,14 @@ def get_config_from_file(path: str, section: str, setting: str):
 
 class UserSurvey:
     """
-    Класс опрос пользователя:
-    Выдаёт по одному вопросу и записывает ответы в словарь
+    Класс опрос пользователя
     """
 
     def __init__(self):
         self.__command: str = ''
-        # self.__question_number: int = -1
         self.__answers: dict = dict()
+        self.__answers['price'] = [None, None]
+        self.__answers['distance'] = [None, None]
 
     def __str__(self):
         return str(self.__answers)
@@ -139,24 +139,24 @@ class UserSurvey:
         return self.__answers['check_out_date_day']
 
     @property
-    def price(self) -> List[int]:
+    def price(self) -> List[Optional[int]]:
         """
         Геттер для вывода диапазона цен
 
         :return __answer['price']: диапазон цен
         :rtype __answer['price]: List[min, max]
         """
-        return self.__answers['price']
+        return self.__answers.get('price', False)
 
     @property
-    def distance(self) -> List[int]:
+    def distance(self) -> Union[List[Optional[int]], bool]:
         """
         Геттер для вывода диапазона расстояния от центра
 
         :return __answers['distance']: диапазон расстояния
         :rtype __answers['distance']: List[min, max]
         """
-        return self.__answers['distance']
+        return self.__answers.get('distance', False)
 
     @property
     def number_hotels(self) -> int:
@@ -312,12 +312,14 @@ class Requests:
     Класс, реализующий необходимые запросы к API
 
     Args:
-        arguments_request (Dict[Optional[int, str, List[int]]]): аргументы запроса
+
     """
 
-    def __init__(self, city, check_in_date_day, check_in_date_month, check_in_date_year,
+    def __init__(self, city,
+                 check_in_date_day, check_in_date_month, check_in_date_year,
                  check_out_date_day, check_out_date_month, check_out_date_year,
-                 number_hotels, sort) -> None:
+                 number_hotels, sort,
+                 price_max, price_min) -> None:
         self.__city = city
         self.__check_in_date_day = check_in_date_day
         self.__check_in_date_month = check_in_date_month
@@ -326,6 +328,8 @@ class Requests:
         self.__check_out_date_month = check_out_date_month
         self.__check_out_date_year = check_out_date_year
         self.__number_hotels = number_hotels
+        self.__price_max = price_max
+        self.__price_min = price_min
 
         self.__sort = sort
         self.__x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
@@ -433,7 +437,12 @@ class Requests:
             "resultsStartingIndex": 0,
             "resultsSize": self.__number_hotels,
             "sort": self.__sort,
-            "filters": {}
+            "filters": {
+                "price": {
+                    "max": self.__price_max,
+                    "min": self.__price_min
+                }
+            }
         }
 
         headers: Dict = {
