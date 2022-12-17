@@ -7,7 +7,7 @@ from modules import MONTHS
 import datetime
 from calendar import monthrange
 import math
-from typing import List
+from typing import List, Dict
 
 
 token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
@@ -188,7 +188,7 @@ def check_out_date_day(message: types.Message) -> None:
 
     if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/highprice']:
         my_bot.register_next_step_handler(question, number_hotels, question.text)
-    if users_id[message.from_user.id]['survey'].command == ['/bestdeal']:
+    if users_id[message.from_user.id]['survey'].command == '/bestdeal':
         my_bot.register_next_step_handler(question, price)
 
 
@@ -214,7 +214,7 @@ def distance(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].price = message.text
+    users_id[message.from_user.id]['survey'].price = sorted(list(map(int, message.text.split('-'))))
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
                                  'Введите расстояние от центра (через тире)',
@@ -234,7 +234,7 @@ def number_hotels(message: types.Message, question: str) -> None:
     """
 
     if 'расстояние' in question:
-        users_id[message.from_user.id]['survey'].distance = message.text
+        users_id[message.from_user.id]['survey'].distance = sorted(list(map(int, message.text.split('-'))))
     if 'день' in question:
         users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
     markup = types.ReplyKeyboardRemove()
@@ -298,6 +298,14 @@ def request(message: types.Message, question: str) -> None:
     if users_id[message.from_user.id]['survey'].command == '/highprice':
         sort_request_results = 'PRICE_HIGH_TO_LOW'
 
+    price = users_id[message.from_user.id]['survey'].price
+
+    if price:
+        price_min, price_max = price
+        result_request_filter_distance = []
+    else:
+        price_min, price_max = None, None
+
     users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
                                                                    check_in_date_day=users_id[message.from_user.id]['survey'].check_in_date_day,
                                                                    check_in_date_month=users_id[message.from_user.id]['survey'].check_in_date_month,
@@ -306,24 +314,47 @@ def request(message: types.Message, question: str) -> None:
                                                                    check_out_date_month=users_id[message.from_user.id]['survey'].check_out_date_month,
                                                                    check_out_date_year=users_id[message.from_user.id]['survey'].check_out_date_year,
                                                                    number_hotels=users_id[message.from_user.id]['survey'].number_hotels,
-                                                                   sort=sort_request_results)
+                                                                   sort=sort_request_results,
+                                                                   price_max=price_max,
+                                                                   price_min=price_min)
 
     result_request = users_id[message.from_user.id]['request'].properties_list
 
+    distance = users_id[message.from_user.id]['survey'].distance
+    if distance:
+        distance_min, distance_max = distance
+        for hotel in result_request:
+            if distance_min <= hotel['destinationInfo']['distanceFromDestination']['value'] <= distance_max:
+                result_request_filter_distance.append(hotel)
+        result_request = result_request_filter_distance
+
+    result_request_for_send = []
+    for hotel in result_request:
+        result_request_dict: Dict = {'name': hotel['name'],
+                                     'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
+                                     'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
+                                     'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
+                                     'amount': hotel['price']['lead']['formatted']}
+        result_request_for_send.append(result_request_dict)
+
+    send_result_request(message, result_request_for_send)
+
+
+def send_result_request(message: types.Message, result_list: List) -> None:
     my_bot.send_message(message.from_user.id,
                         'Вот что я нашёл для Вас:',
                         reply_markup=types.ReplyKeyboardRemove())
 
-    for hotel in result_request:
+    for hotel in result_list:
         my_bot.send_message(message.from_user.id,
                             'Отель: {name}\n'
                             'Адрес: {address}\n'
                             'Расстояние до центра: {distance_value} {distance_unit}\n'
                             'Полная стоимость: {amount}'.format(name=hotel['name'],
-                                                                address=hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
-                                                                distance_value=hotel['destinationInfo']['distanceFromDestination']['value'],
-                                                                distance_unit=hotel['destinationInfo']['distanceFromDestination']['unit'],
-                                                                amount=hotel['price']['lead']['formatted']))
+                                                                address=hotel['address'],
+                                                                distance_value=hotel['distance_value'],
+                                                                distance_unit=hotel['distance_unit'],
+                                                                amount=hotel['amount']))
 
 
 def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
