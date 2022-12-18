@@ -312,7 +312,17 @@ class Requests:
     Класс, реализующий необходимые запросы к API
 
     Args:
-
+        city (str): город
+        check_in_date_day (int): день заезда
+        check_in_date_month (int):месяц заезда
+        check_in_date_year (int): год заезда
+        check_out_date_day (int): день выезда
+        check_out_date_month (int): месяц выезда
+        check_out_date_year (int): город выезда
+        number_hotels (int): количество вариантов
+        sort (str): сортировка
+        price_max (int): максимальная цена
+        price_min (int): минимальная цена
     """
 
     def __init__(self, city,

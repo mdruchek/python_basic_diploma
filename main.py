@@ -12,7 +12,7 @@ from typing import List, Dict
 
 token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
 my_bot: telebot.TeleBot = telebot.TeleBot(token)
-users_id = dict()
+users_id: Dict = dict()
 
 
 @my_bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -294,11 +294,11 @@ def request(message: types.Message, question: str) -> None:
         users_id[message.from_user.id]['survey'].number_photos = int(message.text)
 
     if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/bestdeal']:
-        sort_request_results = 'PRICE_LOW_TO_HIGH'
+        sort_request_results: str = 'PRICE_LOW_TO_HIGH'
     if users_id[message.from_user.id]['survey'].command == '/highprice':
-        sort_request_results = 'PRICE_HIGH_TO_LOW'
+        sort_request_results: str = 'PRICE_HIGH_TO_LOW'
 
-    price = users_id[message.from_user.id]['survey'].price
+    price: List = users_id[message.from_user.id]['survey'].price
 
     if price:
         price_min, price_max = price
