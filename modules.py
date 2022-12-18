@@ -1,7 +1,11 @@
 from configparser import ConfigParser
-from typing import List, Dict
+from typing import List, Dict, Union, Optional
 import json
 import requests
+
+
+MONTHS = ('январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+          'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь')
 
 
 def get_config_from_file(path: str, section: str, setting: str):
@@ -39,31 +43,17 @@ def get_config_from_file(path: str, section: str, setting: str):
 
 class UserSurvey:
     """
-    Класс опрос пользователя:
-    Выдаёт по одному вопросу и записывает ответы в словарь
-
-    Attributes:
-        __questions (tuple): вопросы
-        __survey_list (dict): содержит индексы вопросов (в __question), в соответствии с командой бота
-        __answer_key (tuple): содержит ключи для записи вопросов в __answers (порядок соответствует порядку вопросов)
+    Класс опрос пользователя
     """
-    __questions: tuple = ('В каком городе ищем?',
-                          'В каком диапазоне цен искать?',
-                          'Какое расстояние от центра Вас устроит?',
-                          'Сколько отелей вывести?',
-                          'Загрузить фотографи?',
-                          'Сколько фотографий загрузить?')
-
-    __survey_list: dict = {'/lowprice': [0, 3, 4],
-                           '/highprice': [0, 3, 4],
-                           '/bestdeal': [0, 1, 2, 3, 4]}
-
-    __answers_key: tuple = ('city', 'price', 'distance', 'number_hotels', 'uploading_photos', 'number_photos')
 
     def __init__(self):
         self.__command: str = ''
-        self.__question_number: int = -1
         self.__answers: dict = dict()
+        self.__answers['price'] = [None, None]
+        self.__answers['distance'] = [None, None]
+
+    def __str__(self):
+        return str(self.__answers)
 
     @property
     def command(self) -> str:
@@ -76,16 +66,6 @@ class UserSurvey:
         return self.__command
 
     @property
-    def question_number(self) -> int:
-        """
-        Геттер для вывода номера вопроса
-
-        :return __question_number: номер текущего вопроса
-        :rtype __question_number: int
-        """
-        return self.__question_number
-
-    @property
     def city(self) -> str:
         """
         Геттер для вывода города
@@ -96,52 +76,115 @@ class UserSurvey:
         return self.__answers['city']
 
     @property
-    def price(self) -> List:
+    def check_in_date_year(self) -> int:
+        """
+        Геттер для вывода даты заезда (год)
+
+        :return check_in_date_year: год даты заезда
+        :rtype check_in_date_year: Union[int, bool]
+        """
+
+        return self.__answers.get('check_in_date_year', False)
+
+    @property
+    def check_in_date_month(self) -> int:
+        """
+        Геттер для вывода даты заезда (месяц)
+
+        :return check_in_date_month: месяц даты заезда
+        :rtype check_in_date_month: Union[int, bool]
+        """
+
+        return self.__answers['check_in_date_month']
+
+    @property
+    def check_in_date_day(self) -> int:
+        """
+        Геттер для вывода даты заезда (день)
+
+        :return check_in_date_day: день даты заезда
+        :rtype check_in_date_day: Union[int, bool]
+        """
+
+        return self.__answers['check_in_date_day']
+
+    @property
+    def check_out_date_year(self) -> int:
+        """
+        Геттер для вывода даты выезда (год)
+
+        :return check_out_date_year: год дата выезда
+        :rtype check_out_date_year: Union[int, bool]
+        """
+        return self.__answers['check_out_date_year']
+
+    @property
+    def check_out_date_month(self) -> int:
+        """
+        Геттер для вывода даты выезда (месяц)
+
+        :return check_out_date_month: месяц даты выезда
+        :rtype check_out_date_month: Union[int, bool]
+        """
+        return self.__answers['check_out_date_month']
+
+    @property
+    def check_out_date_day(self) -> int:
+        """
+        Геттер для вывода даты выезда (день)
+
+        :return check_out_date_day: день даты выезда
+        :rtype check_out_date_day: Union[int, bool]
+        """
+        return self.__answers['check_out_date_day']
+
+    @property
+    def price(self) -> List[Optional[int]]:
         """
         Геттер для вывода диапазона цен
 
         :return __answer['price']: диапазон цен
         :rtype __answer['price]: List[min, max]
         """
-        return self.__answers['price']
+        return self.__answers.get('price', False)
 
     @property
-    def distance(self) -> List:
+    def distance(self) -> Union[List[Optional[int]], bool]:
         """
         Геттер для вывода диапазона расстояния от центра
 
         :return __answers['distance']: диапазон расстояния
         :rtype __answers['distance']: List[min, max]
         """
-        return self.__answers['distance']
+        return self.__answers.get('distance', False)
 
     @property
-    def number_hotels(self) -> str:
+    def number_hotels(self) -> int:
         """
         Геттер для возврата количества выводимых ботом отелей
 
         :return __answers['number_hotels']: количество отелей
-        :rtype __answers['number_hotels']: str
+        :rtype __answers['number_hotels']: int
         """
 
         return self.__answers['number_hotels']
 
     @property
-    def uploading_photos(self):
+    def uploading_photos(self) -> str:
         """
         Геттер для вывода необходимости загрузки фото
         """
         return self.__answers['uploading_photos']
 
     @property
-    def number_photos(self) -> str:
+    def number_photos(self) -> int:
         """
         Геттер для вывода количества загружаемых фото
         """
         return self.__answers['number_photos']
 
     @command.setter
-    def command(self, command: str):
+    def command(self, command: str) -> None:
         """
         Сеттер для записи команды боту
 
@@ -150,27 +193,112 @@ class UserSurvey:
         self.reset_answers()
         self.__command = command
 
-    def get_question(self):
+    @city.setter
+    def city(self, city) -> None:
         """
-        Метод для выдачи вопросов по одному, по порядку в __questions, один за обращение к методу
+        Сеттер для записи города
+        :param city (str): город
 
-        :return question: вопрос
-        :rtype question: str
         """
-        self.__question_number += 1
-        if self.__question_number == len(UserSurvey.__survey_list[self.__command]):
-            self.__question_number = -1
-            return False
-        question = UserSurvey.__questions[UserSurvey.__survey_list[self.__command][self.__question_number]]
-        return question
+        self.__answers['city'] = city
 
-    def set_answer(self, answer: str) -> None:
+    @check_in_date_year.setter
+    def check_in_date_year(self, check_in_date_year: int) -> None:
         """
-        Метод записи ответов в __answers
-        :param answer (str): ответ
+        Сеттер для записи года даты заезда
+        :param check_in_date_year (int): год даты заезда
         """
 
-        self.__answers[self.__answers_key[UserSurvey.__survey_list[self.__command][self.__question_number]]] = answer
+        self.__answers['check_in_date_year'] = check_in_date_year
+
+    @check_in_date_month.setter
+    def check_in_date_month(self, check_in_date_month: int) -> None:
+        """
+        Сеттер для записи месяца даты заезда
+        :param check_in_date_month (int): месяц даты заезда
+        """
+
+        self.__answers['check_in_date_month'] = check_in_date_month
+
+    @check_in_date_day.setter
+    def check_in_date_day(self, check_in_date_day: int) -> None:
+        """
+        Сеттер для записи дня даты заезда
+        :param check_in_date_day (int): день даты заезда
+        """
+        self.__answers['check_in_date_day'] = check_in_date_day
+
+    @check_out_date_year.setter
+    def check_out_date_year(self, check_out_date_year: int) -> None:
+        """
+        Сеттер для записи года даты выезда
+        :param check_out_date_year (int): год даты выезда
+        """
+
+        self.__answers['check_out_date_year'] = check_out_date_year
+
+    @check_out_date_month.setter
+    def check_out_date_month(self, check_out_date_month: int) -> None:
+        """
+        Сеттер для записи месяца даты выезда
+        :param check_out_date_month (int): месяц даты выезда
+        """
+
+        self.__answers['check_out_date_month'] = check_out_date_month
+
+    @check_out_date_day.setter
+    def check_out_date_day(self, check_out_date_day: int) -> None:
+        """
+        Сеттер для записи дня даты выезда
+        :param check_out_date_day (int):
+        """
+
+        self.__answers['check_out_date_day'] = check_out_date_day
+
+    @price.setter
+    def price(self, price: List[int]) -> None:
+        """
+        Сеттер для записи диапазона цен
+        :param price List(int): диапазон цены
+        """
+
+        self.__answers['price'] = price
+
+    @distance.setter
+    def distance(self, distance: List[int]) -> None:
+        """
+        Сеттер для записи диапазона расстояния
+        :param distance List(int): диапазон расстояния
+        """
+
+        self.__answers['distance'] = distance
+
+    @number_hotels.setter
+    def number_hotels(self, number_hotels: int) -> None:
+        """
+        Сеттер для записи количества отелей
+        :param number_hotels (int): количество отелей
+        """
+
+        self.__answers['number_hotels'] = number_hotels
+
+    @uploading_photos.setter
+    def uploading_photos(self, uploading_photos: str) -> None:
+        """
+        Сеттер для записи необходимости загрузки фото
+        :param uploading_photos (str): загрузка фото (да, нет)
+        """
+
+        self.__answers['uploading_photos'] = uploading_photos
+
+    @number_photos.setter
+    def number_photos(self, number_photos: int) -> None:
+        """
+        Сеттер для записи количества загружаемых фото
+        :param number_photos (str): количество фото
+        """
+
+        self.__answers['number_photos'] = number_photos
 
     def reset_answers(self) -> None:
         """
@@ -184,22 +312,39 @@ class Requests:
     Класс, реализующий необходимые запросы к API
 
     Args:
-        command (str): команда к боту
-        city (str): город для поиска
-        check_in_date (?): дата заезда
-        check_out_date (?): дата выезда
-        result_size (str): количество результатов поиска
+        city (str): город
+        check_in_date_day (int): день заезда
+        check_in_date_month (int):месяц заезда
+        check_in_date_year (int): год заезда
+        check_out_date_day (int): день выезда
+        check_out_date_month (int): месяц выезда
+        check_out_date_year (int): город выезда
+        number_hotels (int): количество вариантов
+        sort (str): сортировка
+        price_max (int): максимальная цена
+        price_min (int): минимальная цена
     """
 
-    def __init__(self, command: str, city: str, check_in_date, check_out_date, result_size: str):
-        self._x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
+    def __init__(self, city,
+                 check_in_date_day, check_in_date_month, check_in_date_year,
+                 check_out_date_day, check_out_date_month, check_out_date_year,
+                 number_hotels, sort,
+                 price_max, price_min) -> None:
+        self.__city = city
+        self.__check_in_date_day = check_in_date_day
+        self.__check_in_date_month = check_in_date_month
+        self.__check_in_date_year = check_in_date_year
+        self.__check_out_date_day = check_out_date_day
+        self.__check_out_date_month = check_out_date_month
+        self.__check_out_date_year = check_out_date_year
+        self.__number_hotels = number_hotels
+        self.__price_max = price_max
+        self.__price_min = price_min
 
-        if command == 'lowprice' or 'bestdeal':
-            self.__sort: str = 'PRICE_LOW_TO_HIGH'
-        if command == 'highprice':
-            self.__sort: str = 'PRICE_HIGH_TO_LOW'
-        self.__city: str = city
-        self.__result_size: int = int(result_size)
+        self.__sort = sort
+        self.__x_rapid_api_host = get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
+        self.__currency = 'USD'
+        self.__locale = 'en_US'
         self.__location_dict: Dict = dict()
         self.__meta_data_dict: Dict = dict()
         self.__properties_list: List = []
@@ -234,7 +379,7 @@ class Requests:
         url: str = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
 
         headers: Dict = {
-            "X-RapidAPI-Key": self._x_rapid_api_host,
+            "X-RapidAPI-Key": self.__x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
 
@@ -251,7 +396,7 @@ class Requests:
         querystring: Dict = {"q": self.__city}
 
         headers: Dict = {
-            "X-RapidAPI-Key": self._x_rapid_api_host,
+            "X-RapidAPI-Key": self.__x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
 
@@ -278,20 +423,20 @@ class Requests:
 
         url: str = "https://hotels4.p.rapidapi.com/properties/v2/list"
         payload: Dict = {
-            "currency": "USD",
-            "eapid": 1,
-            "locale": "en_US",
+            "currency": self.__currency,
+            "eapid": self.__meta_data_dict["EAPID"],
+            "locale": self.__locale,
             "siteId": self.__meta_data_dict['siteId'],
             "destination": {"regionId": self.__location_dict['gaiaId']},
             "checkInDate": {
-                "day": 20,
-                "month": 12,
-                "year": 2022
+                "day": self.__check_in_date_day,
+                "month": self.__check_in_date_month,
+                "year": self.__check_in_date_year
             },
             "checkOutDate": {
-                "day": 21,
-                "month": 12,
-                "year": 2022
+                "day": self.__check_out_date_day,
+                "month": self.__check_out_date_month,
+                "year": self.__check_out_date_year
             },
             "rooms": [
                 {
@@ -300,14 +445,19 @@ class Requests:
                 }
             ],
             "resultsStartingIndex": 0,
-            "resultsSize": self.__result_size,
+            "resultsSize": self.__number_hotels,
             "sort": self.__sort,
-            "filters": {}
+            "filters": {
+                "price": {
+                    "max": self.__price_max,
+                    "min": self.__price_min
+                }
+            }
         }
 
         headers: Dict = {
             "content-type": "application/json",
-            "X-RapidAPI-Key": self._x_rapid_api_host,
+            "X-RapidAPI-Key": self.__x_rapid_api_host,
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response: requests = requests.request("POST", url, json=payload, headers=headers)
@@ -324,20 +474,18 @@ class Requests:
             url: str = "https://hotels4.p.rapidapi.com/properties/v2/detail"
 
             payload: Dict = {
-                "currency": "USD",
-                "eapid": 1,
-                "locale": "en_US",
+                "currency": self.__currency,
+                "eapid": self.__meta_data_dict["EAPID"],
+                "locale": self.__locale,
                 "siteId": self.__meta_data_dict['siteId'],
                 "propertyId": hotel_properties['id']
             }
 
             headers: Dict = {
                 "content-type": "application/json",
-                "X-RapidAPI-Key": self._x_rapid_api_host,
+                "X-RapidAPI-Key": self.__x_rapid_api_host,
                 "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
             }
 
             response: requests = requests.request("POST", url, json=payload, headers=headers)
             self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
-
-
