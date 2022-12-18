@@ -1,3 +1,5 @@
+import json
+import os
 import telebot
 from telebot import types
 import modules
@@ -39,9 +41,7 @@ def history_command(message: types.Message) -> None:
     :type message: types.Message
     """
     pass
-    """
-    В работе
-    """
+
 
 
 @my_bot.message_handler(commands=['help', 'start'])
@@ -214,7 +214,8 @@ def distance(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].price = sorted(list(map(int, message.text.split('-'))))
+    users_id[message.from_user.id]['survey'].price = sorted(list(map(lambda price: int(price) if int(price) != 0 else int(price) + 1, message.text.split('-'))))
+
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
                                  'Введите расстояние от центра (через тире)',
@@ -337,6 +338,7 @@ def request(message: types.Message, question: str) -> None:
                                      'amount': hotel['price']['lead']['formatted']}
         result_request_for_send.append(result_request_dict)
 
+    saving_results_to_file(str(message.from_user.id), result_request_for_send)
     send_result_request(message, result_request_for_send)
 
 
@@ -355,6 +357,29 @@ def send_result_request(message: types.Message, result_list: List) -> None:
                                                                 distance_value=hotel['distance_value'],
                                                                 distance_unit=hotel['distance_unit'],
                                                                 amount=hotel['amount']))
+
+
+def saving_results_to_file(user_id: str, result_List: List) -> None:
+    """
+    Функция для записи резудьтатов поиска в файл
+
+    :param user_id: id пользователя
+    :type user_id: str
+
+    :param result_List: список с результатами поиска
+    :type result_List: List
+    """
+
+    result_dict = dict()
+    result_dict['command'] = users_id[int(user_id)]['survey'].command
+    result_dict['date'] = str(datetime.datetime.now())
+    result_dict['search results'] = result_List
+    if result_List:
+        file_name: str = '{file_name}.txt'.format(file_name=user_id)
+        path_file = os.path.join('search_history', file_name)
+        with open(path_file, 'a', encoding='utf8') as file:
+            json.dump(result_dict, file)
+            file.write('\n')
 
 
 def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
