@@ -201,8 +201,8 @@ def price(message: types.Message) -> None:
     users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите диапазон цен (через тире)',
-                                 reply_markup=markup)
+                                   'Введите диапазон цен (через тире)',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, distance)
 
 
@@ -217,8 +217,8 @@ def distance(message: types.Message) -> None:
 
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите расстояние от центра (через тире)',
-                                 reply_markup=markup)
+                                   'Введите расстояние от центра (через тире)',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, number_hotels, question.text)
 
 
@@ -239,8 +239,8 @@ def number_hotels(message: types.Message, question: str) -> None:
         users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите количество вариантов',
-                                 reply_markup=markup)
+                                   'Введите количество вариантов',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, uploading_photos)
 
 
@@ -257,8 +257,8 @@ def uploading_photos(message: types.Message) -> None:
     itembtn = types.KeyboardButton('Нет')
     markup.add(itembty, itembtn)
     question = my_bot.send_message(message.from_user.id,
-                                 'Фото загрузить?',
-                                 reply_markup=markup)
+                                   'Фото загрузить?',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, request, question.text)
 
 
@@ -272,8 +272,8 @@ def number_photos(message: types.Message) -> None:
     users_id[message.from_user.id]['survey'].uploading_photos = message.text
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Сколько?',
-                                 reply_markup=markup)
+                                   'Сколько?',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, request, question.text)
 
 
@@ -330,11 +330,21 @@ def request(message: types.Message, question: str) -> None:
 
     result_request_for_send = []
     for hotel in result_request:
+        images_list: List[str] = []
+        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+            uploaded_images = 0
+            for image in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
+                if uploaded_images == users_id[message.from_user.id]['survey'].number_photos:
+                    break
+                images_list.append(image['image']['url'])
+                uploaded_images += 1
+
         result_request_dict: Dict = {'name': hotel['name'],
                                      'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
                                      'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
                                      'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
-                                     'amount': hotel['price']['lead']['formatted']}
+                                     'amount': hotel['price']['lead']['formatted'],
+                                     'images': images_list}
         result_request_for_send.append(result_request_dict)
 
     saving_results_to_file(str(message.from_user.id), result_request_for_send)
