@@ -43,7 +43,6 @@ def history_command(message: types.Message) -> None:
     pass
 
 
-
 @my_bot.message_handler(commands=['help', 'start'])
 def help_command(message: types.Message) -> None:
     """
@@ -103,7 +102,7 @@ def check_in_date_month(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_in_date_year = int(message.text)
-    markup = get_ReplyKeyboardMarkup_month(year=int(message.text))
+    markup = get_reply_keyboard_markup_month(year=int(message.text))
 
     question = my_bot.send_message(message.from_user.id,
                                  'месяц',
@@ -120,8 +119,8 @@ def check_in_date_day(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_in_date_month = MONTHS.index(message.text) + 1
-    markup = get_ReplyKeyboardMarkup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
-                                         month=MONTHS.index(message.text) + 1)
+    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
+                                           month=MONTHS.index(message.text) + 1)
 
     question = my_bot.send_message(message.from_user.id,
                                    'день',
@@ -163,7 +162,7 @@ def check_out_date_month(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_out_date_year = int(message.text)
-    markup = get_ReplyKeyboardMarkup_month(year=int(message.text))
+    markup = get_reply_keyboard_markup_month(year=int(message.text))
 
     question = my_bot.send_message(message.from_user.id,
                                  'месяц',
@@ -179,8 +178,8 @@ def check_out_date_day(message: types.Message) -> None:
     :type message: types.Message
     """
     users_id[message.from_user.id]['survey'].check_out_date_month = MONTHS.index(message.text) + 1
-    markup = get_ReplyKeyboardMarkup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
-                                                                    month=MONTHS.index(message.text) + 1)
+    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
+                                           month=MONTHS.index(message.text) + 1)
 
     question = my_bot.send_message(message.from_user.id,
                                  'день',
@@ -382,7 +381,7 @@ def saving_results_to_file(user_id: str, result_List: List) -> None:
             file.write('\n')
 
 
-def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
+def get_reply_keyboard_markup_month(year: int) -> types.ReplyKeyboardMarkup:
     """
     Функция возвращает клавиатуру выбора месяца
     :param year: год
@@ -407,21 +406,11 @@ def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
             month += 1
             if month == 13:
                 break
-        if len(row_itembt) == 4:
-            itembt1, itembt2, itembt3, itembt4 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4)
-        elif len(row_itembt) == 3:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2, itembt3)
-        elif len(row_itembt) == 2:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2)
-        else:
-            markup.row(row_itembt[0])
+        markup.row(*row_itembt)
     return markup
 
 
-def get_ReplyKeyboardMarkup_day(year: int, month: int) -> types.ReplyKeyboardMarkup:
+def get_reply_keyboard_markup_day(year: int, month: int) -> types.ReplyKeyboardMarkup:
     """
     Функция возвращает клавиатуру выбора дня
     :param year: год
@@ -450,27 +439,7 @@ def get_ReplyKeyboardMarkup_day(year: int, month: int) -> types.ReplyKeyboardMar
             day += 1
             if day == monthrange(year, month)[1] + 1:
                 break
-        if len(row_itembt) == 7:
-            itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7)
-        elif len(row_itembt) == 6:
-            itembt1, itembt2, itembt3, itembt4, itembt5, itembt6 = row_itembt
-
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5, itembt6)
-        elif len(row_itembt) == 5:
-            itembt1, itembt2, itembt3, itembt4, itembt5 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5)
-        elif len(row_itembt) == 4:
-            itembt1, itembt2, itembt3, itembt4 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4)
-        elif len(row_itembt) == 3:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2, itembt3)
-        elif len(row_itembt) == 2:
-            itembt1, itembt2 = row_itembt
-            markup.row(itembt1, itembt2)
-        else:
-            markup.row(row_itembt[0])
+        markup.row(*row_itembt)
     return markup
 
 
