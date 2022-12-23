@@ -367,6 +367,12 @@ def send_result_request(message: types.Message, result_list: List) -> None:
                                                                 distance_unit=hotel['distance_unit'],
                                                                 amount=hotel['amount']))
 
+        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да' and users_id[message.from_user.id]['survey'].number_photos > 0:
+            media_list: List[telebot.types.InputMediaPhoto] = []
+            for image_url in hotel['images']:
+                media_list.append(telebot.types.InputMediaPhoto(image_url))
+            my_bot.send_media_group(message.from_user.id, media_list)
+
 
 def saving_results_to_file(user_id: str, result_List: List) -> None:
     """
