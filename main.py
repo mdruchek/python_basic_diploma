@@ -40,7 +40,18 @@ def history_command(message: types.Message) -> None:
     :param message: сообщение
     :type message: types.Message
     """
-    pass
+    file_name: str = '{users_id}.txt'.format(users_id=message.from_user.id)
+    path_file: str = os.path.join('search_history', file_name)
+    my_bot.send_message(message.from_user.id, 'История поиска:')
+    with open(path_file, 'r', encoding='utf8') as file:
+        for search_str in file:
+            search_dict: Dict = json.loads(search_str)
+            my_bot.send_message(message.from_user.id, 'Команда: {command}\n'
+                                                      'Дата: {date}\n'.format(command=search_dict['command'],
+                                                                              date=search_dict['date']))
+
+            for property in search_dict['search results']:
+                my_bot.send_message(message.from_user.id, property['name'])
 
 
 @my_bot.message_handler(commands=['help', 'start'])
@@ -259,7 +270,7 @@ def uploading_photos(message: types.Message) -> None:
     question = my_bot.send_message(message.from_user.id,
                                    'Фото загрузить?',
                                    reply_markup=markup)
-    my_bot.register_next_step_handler(question, request, question.text)
+    my_bot.register_next_step_handler(question, number_photos)
 
 
 def number_photos(message: types.Message) -> None:
@@ -271,28 +282,28 @@ def number_photos(message: types.Message) -> None:
 
     users_id[message.from_user.id]['survey'].uploading_photos = message.text
     markup = types.ReplyKeyboardRemove()
-    question = my_bot.send_message(message.from_user.id,
-                                   'Сколько?',
-                                   reply_markup=markup)
-    my_bot.register_next_step_handler(question, request, question.text)
+    if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+        question = my_bot.send_message(message.from_user.id,
+                                       'Сколько?',
+                                       reply_markup=markup)
+        my_bot.register_next_step_handler(question, request, question.text)
+    elif message.text.lower() == 'нет':
+        request(message)
 
 
-def request(message: types.Message, question: str) -> None:
+def request(message: types.Message, text: str = '') -> None:
     """
     Функция записывает необходимость загрузки фото или количество фото в зависимости от question,
     формирует запрос и выводит результат
     :param message: сообщение
     :type message: types.Message
 
-    :param question: предыдущий вопрос
-    :type question: str
+    :param text: предыдущий вопрос
+    :type text: str
     """
 
-    if 'Фото' in question:
-        users_id[message.from_user.id]['survey'].uploading_photos = message.text
-    if 'сколько' in question:
+    if text == 'Сколько?':
         users_id[message.from_user.id]['survey'].number_photos = int(message.text)
-
     if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/bestdeal']:
         sort_request_results: str = 'PRICE_LOW_TO_HIGH'
     if users_id[message.from_user.id]['survey'].command == '/highprice':
@@ -330,21 +341,21 @@ def request(message: types.Message, question: str) -> None:
 
     result_request_for_send = []
     for hotel in result_request:
-        images_list: List[str] = []
+        photos_list: List[str] = []
         if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
-            uploaded_images = 0
-            for image in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
-                if uploaded_images == users_id[message.from_user.id]['survey'].number_photos:
+            uploaded_photos = 0
+            for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
+                if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
                     break
-                images_list.append(image['image']['url'])
-                uploaded_images += 1
+                photos_list.append(photo['image']['url'])
+                uploaded_photos += 1
 
         result_request_dict: Dict = {'name': hotel['name'],
                                      'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
                                      'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
                                      'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
                                      'amount': hotel['price']['lead']['formatted'],
-                                     'images': images_list}
+                                     'photos': photos_list}
         result_request_for_send.append(result_request_dict)
 
     saving_results_to_file(str(message.from_user.id), result_request_for_send)
@@ -369,7 +380,7 @@ def send_result_request(message: types.Message, result_list: List) -> None:
 
         if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да' and users_id[message.from_user.id]['survey'].number_photos > 0:
             media_list: List[telebot.types.InputMediaPhoto] = []
-            for image_url in hotel['images']:
+            for image_url in hotel['photos']:
                 media_list.append(telebot.types.InputMediaPhoto(image_url))
             my_bot.send_media_group(message.from_user.id, media_list)
 
