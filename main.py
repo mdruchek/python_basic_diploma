@@ -1,3 +1,5 @@
+import json
+import os
 import telebot
 from telebot import types
 import modules
@@ -38,10 +40,18 @@ def history_command(message: types.Message) -> None:
     :param message: сообщение
     :type message: types.Message
     """
-    pass
-    """
-    В работе
-    """
+    file_name: str = '{users_id}.txt'.format(users_id=message.from_user.id)
+    path_file: str = os.path.join('search_history', file_name)
+    my_bot.send_message(message.from_user.id, 'История поиска:')
+    with open(path_file, 'r', encoding='utf8') as file:
+        for search_str in file:
+            search_dict: Dict = json.loads(search_str)
+            my_bot.send_message(message.from_user.id, 'Команда: {command}\n'
+                                                      'Дата: {date}\n'.format(command=search_dict['command'],
+                                                                              date=search_dict['date']))
+
+            for property in search_dict['search results']:
+                my_bot.send_message(message.from_user.id, property['name'])
 
 
 @my_bot.message_handler(commands=['help', 'start'])
@@ -103,7 +113,7 @@ def check_in_date_month(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_in_date_year = int(message.text)
-    markup = get_ReplyKeyboardMarkup_month(year=int(message.text))
+    markup = get_reply_keyboard_markup_month(year=int(message.text))
 
     question = my_bot.send_message(message.from_user.id,
                                  'месяц',
@@ -120,8 +130,8 @@ def check_in_date_day(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_in_date_month = MONTHS.index(message.text) + 1
-    markup = get_ReplyKeyboardMarkup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
-                                         month=MONTHS.index(message.text) + 1)
+    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
+                                           month=MONTHS.index(message.text) + 1)
 
     question = my_bot.send_message(message.from_user.id,
                                    'день',
@@ -163,7 +173,7 @@ def check_out_date_month(message: types.Message) -> None:
     """
 
     users_id[message.from_user.id]['survey'].check_out_date_year = int(message.text)
-    markup = get_ReplyKeyboardMarkup_month(year=int(message.text))
+    markup = get_reply_keyboard_markup_month(year=int(message.text))
 
     question = my_bot.send_message(message.from_user.id,
                                  'месяц',
@@ -179,8 +189,8 @@ def check_out_date_day(message: types.Message) -> None:
     :type message: types.Message
     """
     users_id[message.from_user.id]['survey'].check_out_date_month = MONTHS.index(message.text) + 1
-    markup = get_ReplyKeyboardMarkup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
-                                                                    month=MONTHS.index(message.text) + 1)
+    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
+                                           month=MONTHS.index(message.text) + 1)
 
     question = my_bot.send_message(message.from_user.id,
                                  'день',
@@ -202,8 +212,8 @@ def price(message: types.Message) -> None:
     users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите диапазон цен (через тире)',
-                                 reply_markup=markup)
+                                   'Введите диапазон цен (через тире)',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, distance)
 
 
@@ -214,11 +224,12 @@ def distance(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].price = sorted(list(map(int, message.text.split('-'))))
+    users_id[message.from_user.id]['survey'].price = sorted(list(map(lambda price: int(price) if int(price) != 0 else int(price) + 1, message.text.split('-'))))
+
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите расстояние от центра (через тире)',
-                                 reply_markup=markup)
+                                   'Введите расстояние от центра (через тире)',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, number_hotels, question.text)
 
 
@@ -239,8 +250,8 @@ def number_hotels(message: types.Message, question: str) -> None:
         users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
     markup = types.ReplyKeyboardRemove()
     question = my_bot.send_message(message.from_user.id,
-                                 'Введите количество вариантов',
-                                 reply_markup=markup)
+                                   'Введите количество вариантов',
+                                   reply_markup=markup)
     my_bot.register_next_step_handler(question, uploading_photos)
 
 
@@ -257,9 +268,9 @@ def uploading_photos(message: types.Message) -> None:
     itembtn = types.KeyboardButton('Нет')
     markup.add(itembty, itembtn)
     question = my_bot.send_message(message.from_user.id,
-                                 'Фото загрузить?',
-                                 reply_markup=markup)
-    my_bot.register_next_step_handler(question, request, question.text)
+                                   'Фото загрузить?',
+                                   reply_markup=markup)
+    my_bot.register_next_step_handler(question, number_photos)
 
 
 def number_photos(message: types.Message) -> None:
@@ -271,28 +282,28 @@ def number_photos(message: types.Message) -> None:
 
     users_id[message.from_user.id]['survey'].uploading_photos = message.text
     markup = types.ReplyKeyboardRemove()
-    question = my_bot.send_message(message.from_user.id,
-                                 'Сколько?',
-                                 reply_markup=markup)
-    my_bot.register_next_step_handler(question, request, question.text)
+    if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+        question = my_bot.send_message(message.from_user.id,
+                                       'Сколько?',
+                                       reply_markup=markup)
+        my_bot.register_next_step_handler(question, request, question.text)
+    elif message.text.lower() == 'нет':
+        request(message)
 
 
-def request(message: types.Message, question: str) -> None:
+def request(message: types.Message, text: str = '') -> None:
     """
     Функция записывает необходимость загрузки фото или количество фото в зависимости от question,
     формирует запрос и выводит результат
     :param message: сообщение
     :type message: types.Message
 
-    :param question: предыдущий вопрос
-    :type question: str
+    :param text: предыдущий вопрос
+    :type text: str
     """
 
-    if 'Фото' in question:
-        users_id[message.from_user.id]['survey'].uploading_photos = message.text
-    if 'сколько' in question:
+    if text == 'Сколько?':
         users_id[message.from_user.id]['survey'].number_photos = int(message.text)
-
     if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/bestdeal']:
         sort_request_results: str = 'PRICE_LOW_TO_HIGH'
     if users_id[message.from_user.id]['survey'].command == '/highprice':
@@ -330,13 +341,24 @@ def request(message: types.Message, question: str) -> None:
 
     result_request_for_send = []
     for hotel in result_request:
+        photos_list: List[str] = []
+        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+            uploaded_photos = 0
+            for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
+                if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
+                    break
+                photos_list.append(photo['image']['url'])
+                uploaded_photos += 1
+
         result_request_dict: Dict = {'name': hotel['name'],
                                      'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
                                      'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
                                      'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
-                                     'amount': hotel['price']['lead']['formatted']}
+                                     'amount': hotel['price']['lead']['formatted'],
+                                     'photos': photos_list}
         result_request_for_send.append(result_request_dict)
 
+    saving_results_to_file(str(message.from_user.id), result_request_for_send)
     send_result_request(message, result_request_for_send)
 
 
@@ -356,8 +378,37 @@ def send_result_request(message: types.Message, result_list: List) -> None:
                                                                 distance_unit=hotel['distance_unit'],
                                                                 amount=hotel['amount']))
 
+        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да' and users_id[message.from_user.id]['survey'].number_photos > 0:
+            media_list: List[telebot.types.InputMediaPhoto] = []
+            for image_url in hotel['photos']:
+                media_list.append(telebot.types.InputMediaPhoto(image_url))
+            my_bot.send_media_group(message.from_user.id, media_list)
 
-def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
+
+def saving_results_to_file(user_id: str, result_List: List) -> None:
+    """
+    Функция для записи резудьтатов поиска в файл
+
+    :param user_id: id пользователя
+    :type user_id: str
+
+    :param result_List: список с результатами поиска
+    :type result_List: List
+    """
+
+    result_dict = dict()
+    result_dict['command'] = users_id[int(user_id)]['survey'].command
+    result_dict['date'] = str(datetime.datetime.now())
+    result_dict['search results'] = result_List
+    if result_List:
+        file_name: str = '{file_name}.txt'.format(file_name=user_id)
+        path_file = os.path.join('search_history', file_name)
+        with open(path_file, 'a', encoding='utf8') as file:
+            json.dump(result_dict, file)
+            file.write('\n')
+
+
+def get_reply_keyboard_markup_month(year: int) -> types.ReplyKeyboardMarkup:
     """
     Функция возвращает клавиатуру выбора месяца
     :param year: год
@@ -382,21 +433,11 @@ def get_ReplyKeyboardMarkup_month(year: int) -> types.ReplyKeyboardMarkup:
             month += 1
             if month == 13:
                 break
-        if len(row_itembt) == 4:
-            itembt1, itembt2, itembt3, itembt4 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4)
-        elif len(row_itembt) == 3:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2, itembt3)
-        elif len(row_itembt) == 2:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2)
-        else:
-            markup.row(row_itembt[0])
+        markup.row(*row_itembt)
     return markup
 
 
-def get_ReplyKeyboardMarkup_day(year: int, month: int) -> types.ReplyKeyboardMarkup:
+def get_reply_keyboard_markup_day(year: int, month: int) -> types.ReplyKeyboardMarkup:
     """
     Функция возвращает клавиатуру выбора дня
     :param year: год
@@ -425,27 +466,7 @@ def get_ReplyKeyboardMarkup_day(year: int, month: int) -> types.ReplyKeyboardMar
             day += 1
             if day == monthrange(year, month)[1] + 1:
                 break
-        if len(row_itembt) == 7:
-            itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5, itembt6, itembt7)
-        elif len(row_itembt) == 6:
-            itembt1, itembt2, itembt3, itembt4, itembt5, itembt6 = row_itembt
-
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5, itembt6)
-        elif len(row_itembt) == 5:
-            itembt1, itembt2, itembt3, itembt4, itembt5 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4, itembt5)
-        elif len(row_itembt) == 4:
-            itembt1, itembt2, itembt3, itembt4 = row_itembt
-            markup.row(itembt1, itembt2, itembt3, itembt4)
-        elif len(row_itembt) == 3:
-            itembt1, itembt2, itembt3 = row_itembt
-            markup.row(itembt1, itembt2, itembt3)
-        elif len(row_itembt) == 2:
-            itembt1, itembt2 = row_itembt
-            markup.row(itembt1, itembt2)
-        else:
-            markup.row(row_itembt[0])
+        markup.row(*row_itembt)
     return markup
 
 
