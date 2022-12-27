@@ -2,6 +2,8 @@ from configparser import ConfigParser
 from typing import List, Dict, Union, Optional
 import json
 import requests
+import datetime
+import re
 
 
 MONTHS = ('январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
@@ -73,7 +75,7 @@ class UserSurvey:
         :return __ansvers['city']: город поиска
         :rtype __answers['city']: str
         """
-        return self.__answers['city']
+        return self.__answers.get('city', False)
 
     @property
     def check_in_date_year(self) -> int:
@@ -95,7 +97,7 @@ class UserSurvey:
         :rtype check_in_date_month: Union[int, bool]
         """
 
-        return self.__answers['check_in_date_month']
+        return self.__answers.get('check_in_date_month', False)
 
     @property
     def check_in_date_day(self) -> int:
@@ -106,7 +108,7 @@ class UserSurvey:
         :rtype check_in_date_day: Union[int, bool]
         """
 
-        return self.__answers['check_in_date_day']
+        return self.__answers.get('check_in_date_day', False)
 
     @property
     def check_out_date_year(self) -> int:
@@ -116,7 +118,7 @@ class UserSurvey:
         :return check_out_date_year: год дата выезда
         :rtype check_out_date_year: Union[int, bool]
         """
-        return self.__answers['check_out_date_year']
+        return self.__answers.get('check_out_date_year', False)
 
     @property
     def check_out_date_month(self) -> int:
@@ -126,7 +128,7 @@ class UserSurvey:
         :return check_out_date_month: месяц даты выезда
         :rtype check_out_date_month: Union[int, bool]
         """
-        return self.__answers['check_out_date_month']
+        return self.__answers.get('check_out_date_month', False)
 
     @property
     def check_out_date_day(self) -> int:
@@ -136,7 +138,7 @@ class UserSurvey:
         :return check_out_date_day: день даты выезда
         :rtype check_out_date_day: Union[int, bool]
         """
-        return self.__answers['check_out_date_day']
+        return self.__answers.get('check_out_date_day', False)
 
     @property
     def price(self) -> List[Optional[int]]:
@@ -167,21 +169,21 @@ class UserSurvey:
         :rtype __answers['number_hotels']: int
         """
 
-        return self.__answers['number_hotels']
+        return self.__answers.get('number_hotels', False)
 
     @property
     def uploading_photos(self) -> str:
         """
         Геттер для вывода необходимости загрузки фото
         """
-        return self.__answers['uploading_photos']
+        return self.__answers.get('uploading_photos', False)
 
     @property
     def number_photos(self) -> int:
         """
         Геттер для вывода количества загружаемых фото
         """
-        return self.__answers['number_photos']
+        return self.__answers.get('number_photos', False)
 
     @command.setter
     def command(self, command: str) -> None:
@@ -489,3 +491,45 @@ class Requests:
 
             response: requests = requests.request("POST", url, json=payload, headers=headers)
             self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+
+
+class CheckingUserResponses:
+    """
+    Класс для проверки ответов пользователя
+
+    Attributes:
+        RESPONSE_TOUSER (Dict): ответы пользователю, в случае ввода не корректных данных
+    """
+
+    RESPONSE_TO_USER: Dict[str: str] = {'year': 'Год должен содержать четыре цыфры, введите ещё раз',
+                                        'month': 'Месяц ввели не корректно, попробуйте ещё раз',
+                                        'day': 'Не верно ввели день, введите ещё раз',
+                                        'city': 'Название города должно состоять из букв латинского алфавита',
+                                        'price-distance': 'Нужно ввести две цифры через пробел',
+                                        'y_n': 'Да или Нет?'}
+
+    @classmethod
+    def checking_user_responses(cls, text: str, type_text: str):
+        if type_text == 'city':
+            if re.fullmatch(r'[a-z, A-Z]*[ -][a-z, A-Z]*|[a-z, A-Z]*', text):
+                return True
+        if type_text == 'year':
+            if text.isdigit() and len(text) == 4 and int(text) >= datetime.date.today().year:
+                return True
+        if type_text == 'day':
+            if text.isdigit() and 0 < len(text) < 3 and 0 < int(text) < 31:
+                return True
+        if type_text == 'month':
+            if text.lower() in MONTHS:
+                return True
+        if type_text == 'price-distance':
+            if re.fullmatch(r'\d*-\d*]', text):
+                return True
+        if type_text == 'number':
+            if re.fullmatch(r'\d*', text):
+                return True
+        if type_text == 'y/n':
+            if type_text.lower() == 'да' or type_text.lower() == 'нет':
+                return True
+
+        return False
