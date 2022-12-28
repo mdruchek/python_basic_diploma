@@ -6,6 +6,7 @@ import modules
 from modules import UserSurvey
 from modules import Requests
 from modules import MONTHS
+from modules import CheckingUserResponses
 import datetime
 from calendar import monthrange
 import math
@@ -87,22 +88,28 @@ def check_in_date_year(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].city = message.text
-    markup = types.ReplyKeyboardRemove()
-    my_bot.send_message(message.from_user.id,
-                        'Введите дату заезда:',
-                        reply_markup=markup)
-    current_year = datetime.date.today().year
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    itembt_cur_year = types.KeyboardButton(str(current_year))
-    itembt_next_year = types.KeyboardButton(str(current_year + 1))
-    markup.add(itembt_cur_year, itembt_next_year)
+    type_text_for_checking = 'citi'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].city = message.text
+        markup = types.ReplyKeyboardRemove()
+        my_bot.send_message(message.from_user.id,
+                            'Введите дату заезда:',
+                            reply_markup=markup)
+        current_year = datetime.date.today().year
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        itembt_cur_year = types.KeyboardButton(str(current_year))
+        itembt_next_year = types.KeyboardButton(str(current_year + 1))
+        markup.add(itembt_cur_year, itembt_next_year)
 
-    question = my_bot.send_message(message.from_user.id,
-                                   'год',
-                                   reply_markup=markup)
+        question = my_bot.send_message(message.from_user.id,
+                                       'год',
+                                       reply_markup=markup)
+        function_next_step = check_in_date_month
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = check_in_date_year
 
-    my_bot.register_next_step_handler(question,  check_in_date_month)
+    my_bot.register_next_step_handler(question,  function_next_step)
 
 
 def check_in_date_month(message: types.Message) -> None:
@@ -112,14 +119,21 @@ def check_in_date_month(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].check_in_date_year = int(message.text)
-    markup = get_reply_keyboard_markup_month(year=int(message.text))
+    type_text_for_checking = 'year'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_in_date_year = int(message.text)
+        markup = get_reply_keyboard_markup_month(year=int(message.text))
 
-    question = my_bot.send_message(message.from_user.id,
-                                 'месяц',
-                                 reply_markup=markup)
+        question = my_bot.send_message(message.from_user.id,
+                                       'месяц',
+                                       reply_markup=markup)
 
-    my_bot.register_next_step_handler(question, check_in_date_day)
+        function_next_step = check_in_date_day
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = check_in_date_month
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def check_in_date_day(message: types.Message) -> None:
@@ -129,15 +143,22 @@ def check_in_date_day(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].check_in_date_month = MONTHS.index(message.text) + 1
-    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
-                                           month=MONTHS.index(message.text) + 1)
+    type_text_for_checking = 'month'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_in_date_month = MONTHS.index(message.text) + 1
+        markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_in_date_year,
+                                               month=MONTHS.index(message.text) + 1)
 
-    question = my_bot.send_message(message.from_user.id,
-                                   'день',
-                                   reply_markup=markup)
+        question = my_bot.send_message(message.from_user.id,
+                                       'день',
+                                       reply_markup=markup)
 
-    my_bot.register_next_step_handler(question, check_out_date_year)
+        function_next_step = check_out_date_year
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = check_in_date_day
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def check_out_date_year(message: types.Message) -> None:
@@ -147,22 +168,29 @@ def check_out_date_year(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].check_in_date_day = int(message.text)
-    markup = types.ReplyKeyboardRemove()
-    my_bot.send_message(message.from_user.id,
-                        'Введите дату выезда:',
-                        reply_markup=markup)
-    current_year = datetime.date.today().year
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    itembt_cur_year = types.KeyboardButton(str(current_year))
-    itembt_next_year = types.KeyboardButton(str(current_year + 1))
-    markup.add(itembt_cur_year, itembt_next_year)
+    type_text_for_checking = 'day'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_in_date_day = int(message.text)
+        markup = types.ReplyKeyboardRemove()
+        my_bot.send_message(message.from_user.id,
+                            'Введите дату выезда:',
+                            reply_markup=markup)
+        current_year = datetime.date.today().year
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        itembt_cur_year = types.KeyboardButton(str(current_year))
+        itembt_next_year = types.KeyboardButton(str(current_year + 1))
+        markup.add(itembt_cur_year, itembt_next_year)
 
-    question = my_bot.send_message(message.from_user.id,
-                                 'год',
-                                 reply_markup=markup)
+        question = my_bot.send_message(message.from_user.id,
+                                     'год',
+                                     reply_markup=markup)
 
-    my_bot.register_next_step_handler(question, check_out_date_month)
+        function_next_step = check_out_date_month
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = check_out_date_year
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def check_out_date_month(message: types.Message) -> None:
@@ -172,14 +200,21 @@ def check_out_date_month(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].check_out_date_year = int(message.text)
-    markup = get_reply_keyboard_markup_month(year=int(message.text))
+    type_text_for_checking = 'year'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_out_date_year = int(message.text)
+        markup = get_reply_keyboard_markup_month(year=int(message.text))
 
-    question = my_bot.send_message(message.from_user.id,
-                                 'месяц',
-                                 reply_markup=markup)
+        question = my_bot.send_message(message.from_user.id,
+                                       'месяц',
+                                       reply_markup=markup)
 
-    my_bot.register_next_step_handler(question, check_out_date_day)
+        function_next_step = check_out_date_day
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = check_out_date_month
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def check_out_date_day(message: types.Message) -> None:
@@ -188,18 +223,25 @@ def check_out_date_day(message: types.Message) -> None:
     :param message: сообщение
     :type message: types.Message
     """
-    users_id[message.from_user.id]['survey'].check_out_date_month = MONTHS.index(message.text) + 1
-    markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
-                                           month=MONTHS.index(message.text) + 1)
 
-    question = my_bot.send_message(message.from_user.id,
-                                 'день',
-                                 reply_markup=markup)
+    type_text_for_checking = 'month'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_out_date_month = MONTHS.index(message.text) + 1
+        markup = get_reply_keyboard_markup_day(year=users_id[message.from_user.id]['survey'].check_out_date_year,
+                                               month=MONTHS.index(message.text) + 1)
 
-    if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/highprice']:
-        my_bot.register_next_step_handler(question, number_hotels, question.text)
-    if users_id[message.from_user.id]['survey'].command == '/bestdeal':
-        my_bot.register_next_step_handler(question, price)
+        question = my_bot.send_message(message.from_user.id,
+                                       'день',
+                                       reply_markup=markup)
+
+        if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/highprice']:
+            my_bot.register_next_step_handler(question, number_hotels, question.text)
+        if users_id[message.from_user.id]['survey'].command == '/bestdeal':
+            my_bot.register_next_step_handler(question, price)
+
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        my_bot.register_next_step_handler(question, check_out_date_day)
 
 
 def price(message: types.Message) -> None:
@@ -209,12 +251,19 @@ def price(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
-    markup = types.ReplyKeyboardRemove()
-    question = my_bot.send_message(message.from_user.id,
-                                   'Введите диапазон цен (через тире)',
-                                   reply_markup=markup)
-    my_bot.register_next_step_handler(question, distance)
+    type_text_for_checking = 'day'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
+        markup = types.ReplyKeyboardRemove()
+        question = my_bot.send_message(message.from_user.id,
+                                       'Введите диапазон цен (через тире)',
+                                       reply_markup=markup)
+        function_next_step = distance
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = price
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def distance(message: types.Message) -> None:
@@ -224,16 +273,21 @@ def distance(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].price = sorted(list(map(lambda price: int(price) if int(price) != 0 else int(price) + 1, message.text.split('-'))))
+    type_text_for_checking = 'price-distance'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].price = sorted(list(map(lambda price: int(price) if int(price) != 0 else int(price) + 1, message.text.split('-'))))
 
-    markup = types.ReplyKeyboardRemove()
-    question = my_bot.send_message(message.from_user.id,
-                                   'Введите расстояние от центра (через тире)',
-                                   reply_markup=markup)
-    my_bot.register_next_step_handler(question, number_hotels, question.text)
+        markup = types.ReplyKeyboardRemove()
+        question = my_bot.send_message(message.from_user.id,
+                                       'Введите расстояние от центра (через тире)',
+                                       reply_markup=markup)
+        my_bot.register_next_step_handler(question, number_hotels, question.text)
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        my_bot.register_next_step_handler(question, distance)
 
 
-def number_hotels(message: types.Message, question: str) -> None:
+def number_hotels(message: types.Message, question_txt: str) -> None:
     """
     Функция записывает цену или день выезда (в зависимосте от предыдущего вопроса questuon)
     и запрашивает количество результаттов
@@ -244,15 +298,28 @@ def number_hotels(message: types.Message, question: str) -> None:
     :type question: str
     """
 
-    if 'расстояние' in question:
-        users_id[message.from_user.id]['survey'].distance = sorted(list(map(int, message.text.split('-'))))
-    if 'день' in question:
-        users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
-    markup = types.ReplyKeyboardRemove()
-    question = my_bot.send_message(message.from_user.id,
-                                   'Введите количество вариантов',
-                                   reply_markup=markup)
-    my_bot.register_next_step_handler(question, uploading_photos)
+    user_response_is_correct = True
+    if 'расстояние' in question_txt:
+        type_text_for_checking = 'price_distance'
+        if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+            users_id[message.from_user.id]['survey'].distance = sorted(list(map(int, message.text.split('-'))))
+        else:
+            user_response_is_correct = False
+    if 'день' in question_txt:
+        type_text_for_checking = 'day'
+        if CheckingUserResponses.checking_user_responses(message.text, type_text='day'):
+            users_id[message.from_user.id]['survey'].check_out_date_day = int(message.text)
+        else:
+            user_response_is_correct = False
+    if user_response_is_correct:
+        markup = types.ReplyKeyboardRemove()
+        question = my_bot.send_message(message.from_user.id,
+                                       'Введите количество вариантов',
+                                       reply_markup=markup)
+        my_bot.register_next_step_handler(question, uploading_photos)
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        my_bot.register_next_step_handler(question, number_hotels, question_txt)
 
 
 def uploading_photos(message: types.Message) -> None:
@@ -262,15 +329,22 @@ def uploading_photos(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].number_hotels = int(message.text)
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    itembty = types.KeyboardButton('Да')
-    itembtn = types.KeyboardButton('Нет')
-    markup.add(itembty, itembtn)
-    question = my_bot.send_message(message.from_user.id,
-                                   'Фото загрузить?',
-                                   reply_markup=markup)
-    my_bot.register_next_step_handler(question, number_photos)
+    type_text_for_checking = 'number'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].number_hotels = int(message.text)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        itembty = types.KeyboardButton('Да')
+        itembtn = types.KeyboardButton('Нет')
+        markup.add(itembty, itembtn)
+        question = my_bot.send_message(message.from_user.id,
+                                       'Фото загрузить?',
+                                       reply_markup=markup)
+        function_next_step = number_photos
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        function_next_step = uploading_photos
+
+    my_bot.register_next_step_handler(question, function_next_step)
 
 
 def number_photos(message: types.Message) -> None:
@@ -280,15 +354,20 @@ def number_photos(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].uploading_photos = message.text
-    markup = types.ReplyKeyboardRemove()
-    if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
-        question = my_bot.send_message(message.from_user.id,
-                                       'Сколько?',
-                                       reply_markup=markup)
-        my_bot.register_next_step_handler(question, request, question.text)
-    elif message.text.lower() == 'нет':
-        request(message)
+    type_text_for_checking = 'y_n'
+    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+        users_id[message.from_user.id]['survey'].uploading_photos = message.text
+        markup = types.ReplyKeyboardRemove()
+        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+            question = my_bot.send_message(message.from_user.id,
+                                           'Сколько?',
+                                           reply_markup=markup)
+            my_bot.register_next_step_handler(question, request, question.text)
+        elif message.text.lower() == 'нет':
+            request(message)
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        my_bot.register_next_step_handler(question, number_photos)
 
 
 def request(message: types.Message, text: str = '') -> None:
@@ -302,64 +381,73 @@ def request(message: types.Message, text: str = '') -> None:
     :type text: str
     """
 
+    user_response_is_correct = True
+    type_text_for_checking = 'number'
     if text == 'Сколько?':
-        users_id[message.from_user.id]['survey'].number_photos = int(message.text)
-    if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/bestdeal']:
-        sort_request_results: str = 'PRICE_LOW_TO_HIGH'
-    if users_id[message.from_user.id]['survey'].command == '/highprice':
-        sort_request_results: str = 'PRICE_HIGH_TO_LOW'
+        if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+            users_id[message.from_user.id]['survey'].number_photos = int(message.text)
+        else:
+            user_response_is_correct = False
+    if user_response_is_correct:
+        if users_id[message.from_user.id]['survey'].command in ['/lowprice', '/bestdeal']:
+            sort_request_results: str = 'PRICE_LOW_TO_HIGH'
+        if users_id[message.from_user.id]['survey'].command == '/highprice':
+            sort_request_results: str = 'PRICE_HIGH_TO_LOW'
 
-    price: List = users_id[message.from_user.id]['survey'].price
+        price: List = users_id[message.from_user.id]['survey'].price
 
-    if price:
-        price_min, price_max = price
-        result_request_filter_distance = []
-    else:
-        price_min, price_max = None, None
+        if price:
+            price_min, price_max = price
+            result_request_filter_distance = []
+        else:
+            price_min, price_max = None, None
 
-    users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
-                                                                   check_in_date_day=users_id[message.from_user.id]['survey'].check_in_date_day,
-                                                                   check_in_date_month=users_id[message.from_user.id]['survey'].check_in_date_month,
-                                                                   check_in_date_year=users_id[message.from_user.id]['survey'].check_in_date_year,
-                                                                   check_out_date_day=users_id[message.from_user.id]['survey'].check_out_date_day,
-                                                                   check_out_date_month=users_id[message.from_user.id]['survey'].check_out_date_month,
-                                                                   check_out_date_year=users_id[message.from_user.id]['survey'].check_out_date_year,
-                                                                   number_hotels=users_id[message.from_user.id]['survey'].number_hotels,
-                                                                   sort=sort_request_results,
-                                                                   price_max=price_max,
-                                                                   price_min=price_min)
+        users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
+                                                                       check_in_date_day=users_id[message.from_user.id]['survey'].check_in_date_day,
+                                                                       check_in_date_month=users_id[message.from_user.id]['survey'].check_in_date_month,
+                                                                       check_in_date_year=users_id[message.from_user.id]['survey'].check_in_date_year,
+                                                                       check_out_date_day=users_id[message.from_user.id]['survey'].check_out_date_day,
+                                                                       check_out_date_month=users_id[message.from_user.id]['survey'].check_out_date_month,
+                                                                       check_out_date_year=users_id[message.from_user.id]['survey'].check_out_date_year,
+                                                                       number_hotels=users_id[message.from_user.id]['survey'].number_hotels,
+                                                                       sort=sort_request_results,
+                                                                       price_max=price_max,
+                                                                       price_min=price_min)
 
-    result_request = users_id[message.from_user.id]['request'].properties_list
+        result_request = users_id[message.from_user.id]['request'].properties_list
 
-    distance = users_id[message.from_user.id]['survey'].distance
-    if distance:
-        distance_min, distance_max = distance
+        distance = users_id[message.from_user.id]['survey'].distance
+        if distance:
+            distance_min, distance_max = distance
+            for hotel in result_request:
+                if distance_min <= hotel['destinationInfo']['distanceFromDestination']['value'] <= distance_max:
+                    result_request_filter_distance.append(hotel)
+            result_request = result_request_filter_distance
+
+        result_request_for_send = []
         for hotel in result_request:
-            if distance_min <= hotel['destinationInfo']['distanceFromDestination']['value'] <= distance_max:
-                result_request_filter_distance.append(hotel)
-        result_request = result_request_filter_distance
+            photos_list: List[str] = []
+            if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+                uploaded_photos = 0
+                for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
+                    if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
+                        break
+                    photos_list.append(photo['image']['url'])
+                    uploaded_photos += 1
 
-    result_request_for_send = []
-    for hotel in result_request:
-        photos_list: List[str] = []
-        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
-            uploaded_photos = 0
-            for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
-                if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
-                    break
-                photos_list.append(photo['image']['url'])
-                uploaded_photos += 1
+            result_request_dict: Dict = {'name': hotel['name'],
+                                         'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
+                                         'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
+                                         'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
+                                         'amount': hotel['price']['lead']['formatted'],
+                                         'photos': photos_list}
+            result_request_for_send.append(result_request_dict)
 
-        result_request_dict: Dict = {'name': hotel['name'],
-                                     'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
-                                     'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
-                                     'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
-                                     'amount': hotel['price']['lead']['formatted'],
-                                     'photos': photos_list}
-        result_request_for_send.append(result_request_dict)
-
-    saving_results_to_file(str(message.from_user.id), result_request_for_send)
-    send_result_request(message, result_request_for_send)
+        saving_results_to_file(str(message.from_user.id), result_request_for_send)
+        send_result_request(message, result_request_for_send)
+    else:
+        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+        my_bot.register_next_step_handler(question, request, text)
 
 
 def send_result_request(message: types.Message, result_list: List) -> None:
