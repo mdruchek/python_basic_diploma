@@ -88,28 +88,32 @@ def check_in_date_year(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    type_text_for_checking = 'citi'
-    if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
-        users_id[message.from_user.id]['survey'].city = message.text
-        markup = types.ReplyKeyboardRemove()
-        my_bot.send_message(message.from_user.id,
-                            'Введите дату заезда:',
-                            reply_markup=markup)
-        current_year = datetime.date.today().year
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        itembt_cur_year = types.KeyboardButton(str(current_year))
-        itembt_next_year = types.KeyboardButton(str(current_year + 1))
-        markup.add(itembt_cur_year, itembt_next_year)
-
-        question = my_bot.send_message(message.from_user.id,
-                                       'год',
-                                       reply_markup=markup)
-        function_next_step = check_in_date_month
+    if message.text in ['/lowprice', '/highprice', '/bestdeal']:
+        my_bot.send_message(message.from_user.id, 'Кажется Вы передумали, придётся начать всё сначала:')
+        my_bot.register_next_step_handler(message, loading_hotels_command)
     else:
-        question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
-        function_next_step = check_in_date_year
+        type_text_for_checking = 'city'
+        if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
+            users_id[message.from_user.id]['survey'].city = message.text
+            markup = types.ReplyKeyboardRemove()
+            my_bot.send_message(message.from_user.id,
+                                'Введите дату заезда:',
+                                reply_markup=markup)
+            current_year = datetime.date.today().year
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            itembt_cur_year = types.KeyboardButton(str(current_year))
+            itembt_next_year = types.KeyboardButton(str(current_year + 1))
+            markup.add(itembt_cur_year, itembt_next_year)
 
-    my_bot.register_next_step_handler(question,  function_next_step)
+            question = my_bot.send_message(message.from_user.id,
+                                           'год',
+                                           reply_markup=markup)
+            function_next_step = check_in_date_month
+        else:
+            question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
+            function_next_step = check_in_date_year
+
+        my_bot.register_next_step_handler(question,  function_next_step)
 
 
 def check_in_date_month(message: types.Message) -> None:
@@ -354,7 +358,7 @@ def number_photos(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    type_text_for_checking = 'y_n'
+    type_text_for_checking = 'yn'
     if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
         users_id[message.from_user.id]['survey'].uploading_photos = message.text
         markup = types.ReplyKeyboardRemove()
@@ -415,36 +419,44 @@ def request(message: types.Message, text: str = '') -> None:
                                                                        price_min=price_min)
 
         result_request = users_id[message.from_user.id]['request'].properties_list
+        if result_request == 429:
+            my_bot.send_message(message.from_user.id, 'Кажется у нас закончился лимит бесплатных запросов!')
+        else:
+            if type(result_request) == list:
+                if len(result_request) > 0:
+                    distance = users_id[message.from_user.id]['survey'].distance
+                    if distance:
+                        distance_min, distance_max = distance
+                        for hotel in result_request:
+                            if distance_min <= hotel['destinationInfo']['distanceFromDestination']['value'] <= distance_max:
+                                result_request_filter_distance.append(hotel)
+                        result_request = result_request_filter_distance
 
-        distance = users_id[message.from_user.id]['survey'].distance
-        if distance:
-            distance_min, distance_max = distance
-            for hotel in result_request:
-                if distance_min <= hotel['destinationInfo']['distanceFromDestination']['value'] <= distance_max:
-                    result_request_filter_distance.append(hotel)
-            result_request = result_request_filter_distance
+                    result_request_for_send = []
+                    for hotel in result_request:
+                        photos_list: List[str] = []
+                        if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
+                            uploaded_photos = 0
+                            for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
+                                if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
+                                    break
+                                photos_list.append(photo['image']['url'])
+                                uploaded_photos += 1
 
-        result_request_for_send = []
-        for hotel in result_request:
-            photos_list: List[str] = []
-            if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да':
-                uploaded_photos = 0
-                for photo in hotel['detail']['data']['propertyInfo']['propertyGallery']['images']:
-                    if uploaded_photos == users_id[message.from_user.id]['survey'].number_photos:
-                        break
-                    photos_list.append(photo['image']['url'])
-                    uploaded_photos += 1
+                        result_request_dict: Dict = {'name': hotel['name'],
+                                                     'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
+                                                     'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
+                                                     'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
+                                                     'amount': hotel['price']['lead']['formatted'],
+                                                     'photos': photos_list}
+                        result_request_for_send.append(result_request_dict)
 
-            result_request_dict: Dict = {'name': hotel['name'],
-                                         'address': hotel['detail']['data']['propertyInfo']['summary']['location']['address']['firstAddressLine'],
-                                         'distance_value': hotel['destinationInfo']['distanceFromDestination']['value'],
-                                         'distance_unit': hotel['destinationInfo']['distanceFromDestination']['unit'],
-                                         'amount': hotel['price']['lead']['formatted'],
-                                         'photos': photos_list}
-            result_request_for_send.append(result_request_dict)
-
-        saving_results_to_file(str(message.from_user.id), result_request_for_send)
-        send_result_request(message, result_request_for_send)
+                    saving_results_to_file(str(message.from_user.id), result_request_for_send)
+                    send_result_request(message, result_request_for_send)
+                else:
+                    my_bot.send_message(message.from_user.id, 'По Вашим данным я ничего не нашёл!')
+            else:
+                my_bot.send_message(message.from_user.id, 'Кажется что-то пошло не так!')
     else:
         question = my_bot.send_message(message.from_user.id, CheckingUserResponses.RESPONSE_TO_USER[type_text_for_checking])
         my_bot.register_next_step_handler(question, request, text)
@@ -559,4 +571,3 @@ def get_reply_keyboard_markup_day(year: int, month: int) -> types.ReplyKeyboardM
 
 
 my_bot.polling(non_stop=True)
-
