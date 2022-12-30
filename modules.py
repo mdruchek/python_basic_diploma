@@ -352,17 +352,28 @@ class Requests:
         self.__properties_list: List = []
 
     @property
-    def properties_list(self) -> List:
+    def properties_list(self) -> Union[List[dict], int]:
         """
         Геттер выполняет все запросы и возвращает список отелей
 
         :return __properties_list:
         """
 
-        self.__get_location_search()
-        self.__get_meta_data()
-        self.__get_properties_list()
-        self.__add_properties_details_dict()
+        response_status_code_location_search = self.__get_location_search()
+        if response_status_code_location_search != 200:
+            return response_status_code_location_search
+
+        response_status_code_meta_data = self.__get_meta_data()
+        if response_status_code_meta_data != 200:
+            return response_status_code_meta_data
+
+        response_status_code_properties_list = self.__get_properties_list()
+        if response_status_code_properties_list != 200:
+            return response_status_code_properties_list
+q
+        response_status_code_details = self.__add_properties_details_dict()
+        if response_status_code_details != 200:
+            return response_status_code_details
 
         with open('meta_data.json', 'w') as file:
             json.dump(self.__meta_data_dict, file, indent=4)
@@ -372,7 +383,7 @@ class Requests:
 
         return self.__properties_list
 
-    def __get_meta_data(self) -> None:
+    def __get_meta_data(self) -> int:
         """
         Метод выполняет запрос v2/get-meta-data
         Данные страны
@@ -386,9 +397,11 @@ class Requests:
         }
 
         response: requests = requests.request("GET", url, headers=headers)
-        self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+        if response.status_code == 200:
+            self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+        return response.status_code
 
-    def __get_location_search(self) -> None:
+    def __get_location_search(self) -> int:
         """
         Метод выполняет запрос locations/v3/search
         Данные города
@@ -407,17 +420,19 @@ class Requests:
                                               headers=headers,
                                               params=querystring)
 
-        locations_dict: Dict = json.loads(response.text)
-        for location in locations_dict["sr"]:
-            if location['type'] == 'CITY':
+        if response.status_code == 200:
+            locations_dict: Dict = json.loads(response.text)
+            for location in locations_dict["sr"]:
+                if location['type'] == 'CITY':
 
-                with open('location_search_city_only.json', 'w') as file:
-                    json.dump(location, file, indent=4)
+                    with open('location_search_city_only.json', 'w') as file:
+                        json.dump(location, file, indent=4)
 
-                self.__location_dict = location
-                break
+                    self.__location_dict = location
+                    break
+        return response.status_code
 
-    def __get_properties_list(self) -> None:
+    def __get_properties_list(self) -> int:
         """
         Метод выполняет запрос properties/v2/list
         Поиск отелей
@@ -463,9 +478,11 @@ class Requests:
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response: requests = requests.request("POST", url, json=payload, headers=headers)
-        self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
+        if response.status_code == 200:
+            self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
+        return response.status_code
 
-    def __add_properties_details_dict(self) -> None:
+    def __add_properties_details_dict(self) -> int:
         """
         Метод выполняет запрос properties/v2/list
         Поиск подробностей по отелям.
@@ -490,7 +507,9 @@ class Requests:
             }
 
             response: requests = requests.request("POST", url, json=payload, headers=headers)
-            self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+            if response.status_code == 200:
+                self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+            return response.status_code
 
 
 class CheckingUserResponses:
@@ -501,15 +520,28 @@ class CheckingUserResponses:
         RESPONSE_TOUSER (Dict): ответы пользователю, в случае ввода не корректных данных
     """
 
-    RESPONSE_TO_USER: Dict[str: str] = {'year': 'Год должен содержать четыре цыфры, введите ещё раз',
-                                        'month': 'Месяц ввели не корректно, попробуйте ещё раз',
-                                        'day': 'Не верно ввели день, введите ещё раз',
-                                        'city': 'Название города должно состоять из букв латинского алфавита',
-                                        'price-distance': 'Нужно ввести две цифры через пробел',
-                                        'y_n': 'Да или Нет?'}
+    RESPONSE_TO_USER: Dict = {'year': 'Год должен содержать четыре цыфры, введите ещё раз',
+                              'month': 'Месяц ввели не корректно, попробуйте ещё раз',
+                              'day': 'Не верно ввели день, введите ещё раз',
+                              'city': 'Название города должно состоять из букв латинского алфавита',
+                              'price-distance': 'Нужно ввести две цифры через пробел',
+                              'yn': 'Да или Нет?',
+                              'number': 'Не корректный ввод!'}
 
     @classmethod
-    def checking_user_responses(cls, text: str, type_text: str):
+    def checking_user_responses(cls, text: str, type_text: str) -> bool:
+        """
+        Метод для проверки сообщений пользователя
+
+        :param text: проверяемое сообщение пользователя
+        :type text: str
+
+        :param type_text: шаблон, по которому необходимо проверять сообщение пользователя
+        :type type_text: str
+
+        :rtype: bool
+        """
+
         if type_text == 'city':
             if re.fullmatch(r'[a-z, A-Z]*[ -][a-z, A-Z]*|[a-z, A-Z]*', text):
                 return True
@@ -528,8 +560,8 @@ class CheckingUserResponses:
         if type_text == 'number':
             if re.fullmatch(r'\d*', text):
                 return True
-        if type_text == 'y/n':
-            if type_text.lower() == 'да' or type_text.lower() == 'нет':
+        if type_text == 'yn':
+            if text.lower() == 'да' or text.lower() == 'нет':
                 return True
 
         return False
