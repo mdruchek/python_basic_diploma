@@ -2,6 +2,8 @@ from configparser import ConfigParser
 from typing import List, Dict, Union, Optional
 import json
 import requests
+import datetime
+import re
 
 
 MONTHS = ('январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
@@ -73,7 +75,7 @@ class UserSurvey:
         :return __ansvers['city']: город поиска
         :rtype __answers['city']: str
         """
-        return self.__answers['city']
+        return self.__answers.get('city', False)
 
     @property
     def check_in_date_year(self) -> int:
@@ -95,7 +97,7 @@ class UserSurvey:
         :rtype check_in_date_month: Union[int, bool]
         """
 
-        return self.__answers['check_in_date_month']
+        return self.__answers.get('check_in_date_month', False)
 
     @property
     def check_in_date_day(self) -> int:
@@ -106,7 +108,7 @@ class UserSurvey:
         :rtype check_in_date_day: Union[int, bool]
         """
 
-        return self.__answers['check_in_date_day']
+        return self.__answers.get('check_in_date_day', False)
 
     @property
     def check_out_date_year(self) -> int:
@@ -116,7 +118,7 @@ class UserSurvey:
         :return check_out_date_year: год дата выезда
         :rtype check_out_date_year: Union[int, bool]
         """
-        return self.__answers['check_out_date_year']
+        return self.__answers.get('check_out_date_year', False)
 
     @property
     def check_out_date_month(self) -> int:
@@ -126,7 +128,7 @@ class UserSurvey:
         :return check_out_date_month: месяц даты выезда
         :rtype check_out_date_month: Union[int, bool]
         """
-        return self.__answers['check_out_date_month']
+        return self.__answers.get('check_out_date_month', False)
 
     @property
     def check_out_date_day(self) -> int:
@@ -136,7 +138,7 @@ class UserSurvey:
         :return check_out_date_day: день даты выезда
         :rtype check_out_date_day: Union[int, bool]
         """
-        return self.__answers['check_out_date_day']
+        return self.__answers.get('check_out_date_day', False)
 
     @property
     def price(self) -> List[Optional[int]]:
@@ -167,21 +169,21 @@ class UserSurvey:
         :rtype __answers['number_hotels']: int
         """
 
-        return self.__answers['number_hotels']
+        return self.__answers.get('number_hotels', False)
 
     @property
     def uploading_photos(self) -> str:
         """
         Геттер для вывода необходимости загрузки фото
         """
-        return self.__answers['uploading_photos']
+        return self.__answers.get('uploading_photos', False)
 
     @property
     def number_photos(self) -> int:
         """
         Геттер для вывода количества загружаемых фото
         """
-        return self.__answers['number_photos']
+        return self.__answers.get('number_photos', False)
 
     @command.setter
     def command(self, command: str) -> None:
@@ -350,27 +352,35 @@ class Requests:
         self.__properties_list: List = []
 
     @property
-    def properties_list(self) -> List:
+    def properties_list(self) -> Union[List[dict], int]:
         """
         Геттер выполняет все запросы и возвращает список отелей
 
         :return __properties_list:
         """
 
-        self.__get_location_search()
-        self.__get_meta_data()
-        self.__get_properties_list()
-        self.__add_properties_details_dict()
+        response_status_code_location_search = self.__get_location_search()
+        if response_status_code_location_search != 200:
+            return response_status_code_location_search
+
+        response_status_code_meta_data = self.__get_meta_data()
+        if response_status_code_meta_data != 200:
+            return response_status_code_meta_data
+
+        response_status_code_properties_list = self.__get_properties_list()
+        if response_status_code_properties_list != 200:
+            return response_status_code_properties_list
+
+        response_status_code_details = self.__add_properties_details_dict()
+        if response_status_code_details != 200:
+            return response_status_code_details
 
         with open('meta_data.json', 'w') as file:
             json.dump(self.__meta_data_dict, file, indent=4)
 
-        with open('properties_list.json', 'w') as file:
-            json.dump(self.__properties_list, file, indent=4)
-
         return self.__properties_list
 
-    def __get_meta_data(self) -> None:
+    def __get_meta_data(self) -> int:
         """
         Метод выполняет запрос v2/get-meta-data
         Данные страны
@@ -384,9 +394,11 @@ class Requests:
         }
 
         response: requests = requests.request("GET", url, headers=headers)
-        self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+        if response.status_code == 200:
+            self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+        return response.status_code
 
-    def __get_location_search(self) -> None:
+    def __get_location_search(self) -> int:
         """
         Метод выполняет запрос locations/v3/search
         Данные города
@@ -405,17 +417,22 @@ class Requests:
                                               headers=headers,
                                               params=querystring)
 
-        locations_dict: Dict = json.loads(response.text)
-        for location in locations_dict["sr"]:
-            if location['type'] == 'CITY':
+        print('location search {}'.format(response.status_code))
+        print(response.text)
 
-                with open('location_search_city_only.json', 'w') as file:
-                    json.dump(location, file, indent=4)
+        if response.status_code == 200:
+            locations_dict: Dict = json.loads(response.text)
+            for location in locations_dict["sr"]:
+                if location['type'] == 'CITY':
 
-                self.__location_dict = location
-                break
+                    with open('location_search_city_only.json', 'w') as file:
+                        json.dump(location, file, indent=4)
 
-    def __get_properties_list(self) -> None:
+                    self.__location_dict = location
+                    break
+        return response.status_code
+
+    def __get_properties_list(self) -> int:
         """
         Метод выполняет запрос properties/v2/list
         Поиск отелей
@@ -461,9 +478,29 @@ class Requests:
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response: requests = requests.request("POST", url, json=payload, headers=headers)
-        self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
 
-    def __add_properties_details_dict(self) -> None:
+        response_dict: Dict = json.loads(response.text)
+
+        print(type(response_dict))
+        print(response_dict)
+
+        with open('properties_list.json', 'w') as file:
+            json.dump(json.loads(response.text), file, indent=4)
+
+        if response.status_code == 200:
+            if response_dict.get('data', False):
+                if response_dict['data'].get('propertySearch', False):
+                    if response_dict['data']['propertySearch'].get('properties', False):
+                        self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
+                        return 200
+            if response_dict.get('errors', False):
+                if response_dict['errors'][0].get('extensions', False):
+                    if response_dict['errors'][0]['extensions'].get('event', False):
+                        if response_dict['errors'][0]['extensions']['event'].get('message', False):
+                            if response_dict['errors'][0]['extensions']['event']['message'] == 'Your filter options are not showing a match.':
+                                return 1
+
+    def __add_properties_details_dict(self) -> Optional[int]:
         """
         Метод выполняет запрос properties/v2/list
         Поиск подробностей по отелям.
@@ -488,4 +525,64 @@ class Requests:
             }
 
             response: requests = requests.request("POST", url, json=payload, headers=headers)
-            self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+            if response.status_code == 200:
+                self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
+            else:
+                return response.status_code
+        return 200
+
+
+class CheckingUserResponses:
+    """
+    Класс для проверки ответов пользователя
+
+    Attributes:
+        RESPONSE_TOUSER (Dict): ответы пользователю, в случае ввода не корректных данных
+    """
+
+    RESPONSE_TO_USER: Dict = {'year': 'Год должен содержать четыре цыфры, введите ещё раз',
+                              'month': 'Месяц ввели не корректно, попробуйте ещё раз',
+                              'day': 'Не верно ввели день, введите ещё раз',
+                              'city': 'Название города должно состоять из букв латинского алфавита',
+                              'price-distance': 'Нужно ввести две цифры через тире',
+                              'yn': 'Да или Нет?',
+                              'number': 'Не корректный ввод!'}
+
+    @classmethod
+    def checking_user_responses(cls, text: str, type_text: str) -> bool:
+        """
+        Метод для проверки сообщений пользователя
+
+        :param text: проверяемое сообщение пользователя
+        :type text: str
+
+        :param type_text: шаблон, по которому необходимо проверять сообщение пользователя
+        :type type_text: str
+
+        :rtype: bool
+        """
+
+        if type_text == 'city':
+            if re.fullmatch(r'[a-z, A-Z]*[ -][a-z, A-Z]*|[a-z, A-Z]*', text):
+                return True
+        if type_text == 'year':
+            if text.isdigit() and len(text) == 4 and int(text) >= datetime.date.today().year:
+                return True
+        if type_text == 'day':
+            if text.isdigit() and 0 < len(text) < 3 and 0 < int(text) < 32:
+                return True
+        if type_text == 'month':
+            if text.lower() in MONTHS:
+                return True
+        if type_text == 'price-distance':
+            print(text)
+            if re.fullmatch(r'\d*-\d*', text):
+                return True
+        if type_text == 'number':
+            if re.fullmatch(r'\d*', text):
+                return True
+        if type_text == 'yn':
+            if text.lower() == 'да' or text.lower() == 'нет':
+                return True
+
+        return False
