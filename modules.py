@@ -370,16 +370,13 @@ class Requests:
         response_status_code_properties_list = self.__get_properties_list()
         if response_status_code_properties_list != 200:
             return response_status_code_properties_list
-q
+
         response_status_code_details = self.__add_properties_details_dict()
         if response_status_code_details != 200:
             return response_status_code_details
 
         with open('meta_data.json', 'w') as file:
             json.dump(self.__meta_data_dict, file, indent=4)
-
-        with open('properties_list.json', 'w') as file:
-            json.dump(self.__properties_list, file, indent=4)
 
         return self.__properties_list
 
@@ -419,6 +416,9 @@ q
                                               url,
                                               headers=headers,
                                               params=querystring)
+
+        print('location search {}'.format(response.status_code))
+        print(response.text)
 
         if response.status_code == 200:
             locations_dict: Dict = json.loads(response.text)
@@ -478,11 +478,29 @@ q
             "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
         }
         response: requests = requests.request("POST", url, json=payload, headers=headers)
-        if response.status_code == 200:
-            self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
-        return response.status_code
 
-    def __add_properties_details_dict(self) -> int:
+        response_dict: Dict = json.loads(response.text)
+
+        print(type(response_dict))
+        print(response_dict)
+
+        with open('properties_list.json', 'w') as file:
+            json.dump(json.loads(response.text), file, indent=4)
+
+        if response.status_code == 200:
+            if response_dict.get('data', False):
+                if response_dict['data'].get('propertySearch', False):
+                    if response_dict['data']['propertySearch'].get('properties', False):
+                        self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
+                        return 200
+            if response_dict.get('errors', False):
+                if response_dict['errors'][0].get('extensions', False):
+                    if response_dict['errors'][0]['extensions'].get('event', False):
+                        if response_dict['errors'][0]['extensions']['event'].get('message', False):
+                            if response_dict['errors'][0]['extensions']['event']['message'] == 'Your filter options are not showing a match.':
+                                return 1
+
+    def __add_properties_details_dict(self) -> Optional[int]:
         """
         Метод выполняет запрос properties/v2/list
         Поиск подробностей по отелям.
@@ -509,7 +527,9 @@ q
             response: requests = requests.request("POST", url, json=payload, headers=headers)
             if response.status_code == 200:
                 self.__properties_list[index_hotel]['detail'] = json.loads(response.text)
-            return response.status_code
+            else:
+                return response.status_code
+        return 200
 
 
 class CheckingUserResponses:
@@ -524,7 +544,7 @@ class CheckingUserResponses:
                               'month': 'Месяц ввели не корректно, попробуйте ещё раз',
                               'day': 'Не верно ввели день, введите ещё раз',
                               'city': 'Название города должно состоять из букв латинского алфавита',
-                              'price-distance': 'Нужно ввести две цифры через пробел',
+                              'price-distance': 'Нужно ввести две цифры через тире',
                               'yn': 'Да или Нет?',
                               'number': 'Не корректный ввод!'}
 
@@ -549,13 +569,14 @@ class CheckingUserResponses:
             if text.isdigit() and len(text) == 4 and int(text) >= datetime.date.today().year:
                 return True
         if type_text == 'day':
-            if text.isdigit() and 0 < len(text) < 3 and 0 < int(text) < 31:
+            if text.isdigit() and 0 < len(text) < 3 and 0 < int(text) < 32:
                 return True
         if type_text == 'month':
             if text.lower() in MONTHS:
                 return True
         if type_text == 'price-distance':
-            if re.fullmatch(r'\d*-\d*]', text):
+            print(text)
+            if re.fullmatch(r'\d*-\d*', text):
                 return True
         if type_text == 'number':
             if re.fullmatch(r'\d*', text):
