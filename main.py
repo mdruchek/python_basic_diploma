@@ -499,14 +499,7 @@ def request(message: types.Message, text: str = '') -> None:
 
             print(users_id[message.from_user.id]['survey'])
 
-            users_id[message.from_user.id]['request']: Requests = Requests(city=users_id[message.from_user.id]['survey'].city,
-                                                                           check_in_date_day=users_id[message.from_user.id]['survey'].check_in_date_day,
-                                                                           check_in_date_month=users_id[message.from_user.id]['survey'].check_in_date_month,
-                                                                           check_in_date_year=users_id[message.from_user.id]['survey'].check_in_date_year,
-                                                                           check_out_date_day=users_id[message.from_user.id]['survey'].check_out_date_day,
-                                                                           check_out_date_month=users_id[message.from_user.id]['survey'].check_out_date_month,
-                                                                           check_out_date_year=users_id[message.from_user.id]['survey'].check_out_date_year,
-                                                                           number_hotels=users_id[message.from_user.id]['survey'].number_hotels,
+            users_id[message.from_user.id]['request']: Requests = Requests(parameters_request=users_id[message.from_user.id]['survey'].answers,
                                                                            sort=sort_request_results,
                                                                            price_max=price_max,
                                                                            price_min=price_min)
