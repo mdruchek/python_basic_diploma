@@ -185,6 +185,13 @@ class UserSurvey:
         """
         return self.__answers.get('number_photos', False)
 
+    @property
+    def answers(self) -> Dict:
+        """
+        Геттер для возврата словаря с ответами пользователя
+        """
+        return self.__answers
+
     @command.setter
     def command(self, command: str) -> None:
         """
@@ -314,32 +321,14 @@ class Requests:
     Класс, реализующий необходимые запросы к API
 
     Args:
-        city (str): город
-        check_in_date_day (int): день заезда
-        check_in_date_month (int):месяц заезда
-        check_in_date_year (int): год заезда
-        check_out_date_day (int): день выезда
-        check_out_date_month (int): месяц выезда
-        check_out_date_year (int): город выезда
-        number_hotels (int): количество вариантов
+        parameters_request (Dict): параматры запроса, из опроса пользователя
         sort (str): сортировка
         price_max (int): максимальная цена
         price_min (int): минимальная цена
     """
 
-    def __init__(self, city,
-                 check_in_date_day, check_in_date_month, check_in_date_year,
-                 check_out_date_day, check_out_date_month, check_out_date_year,
-                 number_hotels, sort,
-                 price_max, price_min) -> None:
-        self.__city = city
-        self.__check_in_date_day = check_in_date_day
-        self.__check_in_date_month = check_in_date_month
-        self.__check_in_date_year = check_in_date_year
-        self.__check_out_date_day = check_out_date_day
-        self.__check_out_date_month = check_out_date_month
-        self.__check_out_date_year = check_out_date_year
-        self.__number_hotels = number_hotels
+    def __init__(self, parameters_request, sort, price_max, price_min) -> None:
+        self.__parameters_request = parameters_request
         self.__price_max = price_max
         self.__price_min = price_min
 
@@ -405,7 +394,7 @@ class Requests:
         """
 
         url: str = "https://hotels4.p.rapidapi.com/locations/v3/search"
-        querystring: Dict = {"q": self.__city}
+        querystring: Dict = {"q": self.__parameters_request['city']}
 
         headers: Dict = {
             "X-RapidAPI-Key": self.__x_rapid_api_host,
@@ -446,14 +435,14 @@ class Requests:
             "siteId": self.__meta_data_dict['siteId'],
             "destination": {"regionId": self.__location_dict['gaiaId']},
             "checkInDate": {
-                "day": self.__check_in_date_day,
-                "month": self.__check_in_date_month,
-                "year": self.__check_in_date_year
+                "day": self.__parameters_request['check_in_date_day'],
+                "month": self.__parameters_request['check_in_date_month'],
+                "year": self.__parameters_request['check_in_date_year']
             },
             "checkOutDate": {
-                "day": self.__check_out_date_day,
-                "month": self.__check_out_date_month,
-                "year": self.__check_out_date_year
+                "day": self.__parameters_request['check_out_date_day'],
+                "month": self.__parameters_request['check_out_date_month'],
+                "year": self.__parameters_request['check_out_date_year']
             },
             "rooms": [
                 {
@@ -462,7 +451,7 @@ class Requests:
                 }
             ],
             "resultsStartingIndex": 0,
-            "resultsSize": self.__number_hotels,
+            "resultsSize": self.__parameters_request['number_hotels'],
             "sort": self.__sort,
             "filters": {
                 "price": {
