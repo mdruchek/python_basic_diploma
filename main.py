@@ -71,8 +71,10 @@ def help_command(message: types.Message) -> None:
     :param message: сообщение
     :type message: types.Message
     """
-    my_bot.send_message(message.from_user.id, 'Привет меня зовут MDr, я могу подобрать отель для проживания.\n'
-                                              'Я понимаю такие команды:\n'
+
+    users_id[message.from_user.id]['survey'].reset_answers()
+    my_bot.send_message(message.from_user.id, 'Я могу подобрать отель для проживания.\n'
+                                              'Справка по командам:\n'
                                               '/lowprice - вывод самых дешёвых отелей в городе\n'
                                               '/highprice - вывод самых дорогих отелей в городе\n'
                                               '/bestdeal - вывод отелей, наиболее подходящих по цене и расположению от центра\n'
@@ -109,6 +111,12 @@ def check_in_date_year(message: types.Message) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         type_text_for_checking = 'city'
@@ -156,6 +164,12 @@ def check_in_date_month(message: types.Message) -> None:
                             reply_markup=markup)
         history_command(message)
 
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
+
     else:
         type_text_for_checking = 'year'
         if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
@@ -196,6 +210,12 @@ def check_in_date_day(message: types.Message) -> None:
                             reply_markup=markup)
         history_command(message)
 
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
+
     else:
         type_text_for_checking = 'month'
         if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
@@ -234,6 +254,12 @@ def check_out_date_year(message: types.Message) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         type_text_for_checking = 'day'
@@ -281,6 +307,12 @@ def check_out_date_month(message: types.Message) -> None:
                             reply_markup=markup)
         history_command(message)
 
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
+
     else:
         type_text_for_checking = 'year'
         if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
@@ -318,6 +350,12 @@ def check_out_date_day(message: types.Message) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         type_text_for_checking = 'month'
@@ -360,6 +398,12 @@ def price(message: types.Message) -> None:
                             reply_markup=markup)
         history_command(message)
 
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
+
     else:
         type_text_for_checking = 'day'
         if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
@@ -394,6 +438,12 @@ def distance(message: types.Message) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         type_text_for_checking = 'price-distance'
@@ -433,6 +483,12 @@ def number_hotels(message: types.Message, question_txt: str) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         user_response_is_correct = True
@@ -479,6 +535,12 @@ def uploading_photos(message: types.Message) -> None:
                             reply_markup=markup)
         history_command(message)
 
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
+
     else:
         type_text_for_checking = 'number'
         if CheckingUserResponses.checking_user_responses(message.text, type_text=type_text_for_checking):
@@ -517,6 +579,12 @@ def number_photos(message: types.Message) -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         type_text_for_checking = 'yn'
@@ -558,6 +626,12 @@ def request(message: types.Message, text: str = '') -> None:
                             'Кажется Вы передумали.',
                             reply_markup=markup)
         history_command(message)
+
+    elif message.text == '/help':
+        my_bot.send_message(message.from_user.id,
+                            'Кажется Вы передумали.',
+                            reply_markup=markup)
+        help_command(message)
 
     else:
         user_response_is_correct = True
