@@ -549,7 +549,6 @@ class CheckingUserResponses:
             if text.lower() in MONTHS:
                 return True
         if type_text == 'price-distance':
-            print(text)
             if re.fullmatch(r'\d*-\d*', text):
                 return True
         if type_text == 'number':
