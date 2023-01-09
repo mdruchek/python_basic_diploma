@@ -364,9 +364,6 @@ class Requests:
         if response_status_code_details != 200:
             return response_status_code_details
 
-        with open('meta_data.json', 'w') as file:
-            json.dump(self.__meta_data_dict, file, indent=4)
-
         return self.__properties_list
 
     def __get_meta_data(self) -> int:
@@ -406,17 +403,10 @@ class Requests:
                                               headers=headers,
                                               params=querystring)
 
-        print('location search {}'.format(response.status_code))
-        print(response.text)
-
         if response.status_code == 200:
             locations_dict: Dict = json.loads(response.text)
             for location in locations_dict["sr"]:
                 if location['type'] == 'CITY':
-
-                    with open('location_search_city_only.json', 'w') as file:
-                        json.dump(location, file, indent=4)
-
                     self.__location_dict = location
                     break
         return response.status_code
@@ -470,18 +460,13 @@ class Requests:
 
         response_dict: Dict = json.loads(response.text)
 
-        print(type(response_dict))
-        print(response_dict)
-
-        with open('properties_list.json', 'w') as file:
-            json.dump(json.loads(response.text), file, indent=4)
-
         if response.status_code == 200:
             if response_dict.get('data', False):
                 if response_dict['data'].get('propertySearch', False):
                     if response_dict['data']['propertySearch'].get('properties', False):
                         self.__properties_list = json.loads(response.text)['data']['propertySearch']['properties']
                         return 200
+
             if response_dict.get('errors', False):
                 if response_dict['errors'][0].get('extensions', False):
                     if response_dict['errors'][0]['extensions'].get('event', False):
