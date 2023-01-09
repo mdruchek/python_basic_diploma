@@ -656,15 +656,14 @@ def request(message: types.Message, text: str = '') -> None:
             else:
                 price_min, price_max = None, None
 
-            print(users_id[message.from_user.id]['survey'])
-
             users_id[message.from_user.id]['request']: Requests = Requests(parameters_request=users_id[message.from_user.id]['survey'].answers,
                                                                            sort=sort_request_results,
                                                                            price_max=price_max,
                                                                            price_min=price_min)
 
+            my_bot.send_message(message.from_user.id, 'Минуточку. Запрашиваю информацию.')
+
             result_request = users_id[message.from_user.id]['request'].properties_list
-            print(result_request)
             if result_request == 429:
                 my_bot.send_message(message.from_user.id,
                                     'Кажется у нас закончился лимит бесплатных запросов!',
