@@ -345,7 +345,8 @@ class Requests:
         """
         Геттер выполняет все запросы и возвращает список отелей
 
-        :return __properties_list:
+        :return Union[__properties_list, response_status_code...]: список отелей, либо статус ответа сервера (если статус не 200)
+        :rtype Union[List[dict], int]
         """
 
         response_status_code_location_search = self.__get_location_search()
@@ -370,6 +371,9 @@ class Requests:
         """
         Метод выполняет запрос v2/get-meta-data
         Данные страны
+        :return response.status_code: статус ответа сервера (если статус 200);
+                либо 1, если словарь self.__location_dict не соттветствует ожидаемому
+        :rtype: int
         """
 
         url: str = "https://hotels4.p.rapidapi.com/v2/get-meta-data"
@@ -381,13 +385,21 @@ class Requests:
 
         response: requests = requests.request("GET", url, headers=headers)
         if response.status_code == 200:
-            self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict["hierarchyInfo"]["country"]["isoCode2"]]
+            if self.__location_dict.get('hierarchyInfo', False):
+                if self.__location_dict['hierarchyInfo'].get('country', False):
+                    if self.__location_dict['hierarchyInfo']['country'].get('isoCode2', False):
+                        self.__meta_data_dict: Dict = json.loads(response.text)[self.__location_dict['hierarchyInfo']['country']['isoCode2']]
+                        return 200
+            return 1
         return response.status_code
 
     def __get_location_search(self) -> int:
         """
         Метод выполняет запрос locations/v3/search
         Данные города
+
+        :return response.status_code: статус ответа сервера
+        :rtype: int
         """
 
         url: str = "https://hotels4.p.rapidapi.com/locations/v3/search"
@@ -415,6 +427,9 @@ class Requests:
         """
         Метод выполняет запрос properties/v2/list
         Поиск отелей
+
+        :return response.status_code: статус ответа сервера; либо 1, если ничего нет соответствующее фильтрам
+        :rtype: int
         """
 
         url: str = "https://hotels4.p.rapidapi.com/properties/v2/list"
@@ -458,9 +473,8 @@ class Requests:
         }
         response: requests = requests.request("POST", url, json=payload, headers=headers)
 
-        response_dict: Dict = json.loads(response.text)
-
         if response.status_code == 200:
+            response_dict: Dict = json.loads(response.text)
             if response_dict.get('data', False):
                 if response_dict['data'].get('propertySearch', False):
                     if response_dict['data']['propertySearch'].get('properties', False):
@@ -474,11 +488,16 @@ class Requests:
                             if response_dict['errors'][0]['extensions']['event']['message'] == 'Your filter options are not showing a match.':
                                 return 1
 
+        return response.status_code
+
     def __add_properties_details_dict(self) -> Optional[int]:
         """
         Метод выполняет запрос properties/v2/list
         Поиск подробностей по отелям.
         Добавляет детали к __properties_list.
+
+        :return response.status_code: статус ответа сервера
+        :rtype: int
         """
 
         for index_hotel, hotel_properties in enumerate(self.__properties_list):
