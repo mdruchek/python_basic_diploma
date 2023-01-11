@@ -16,29 +16,9 @@
    С другими версиями проект может не работать.
    Подробности, например, тут: https://teletype.in/@pythontalk/requirements.  
 4. Перейти в консоли в папку с проектом и выполнить команду: python main.py  
-5. По запросу консоли ввести token чат-бота Telegramm и rapidapi-key сайта https://rapidapi.com.  
-   Как их получить, описано ниже.  
-    5.1 Создание чат бота и получение его токена можно посмотреть, например, тут:
-         https://web7.pro/kak-poluchit-token-bota-telegram-api/  
-    5.2 Регистрация на сайте https://rapidapi.com и получение 'rapidapi-key':  
-        - Открыть браузер и перейти на сайт https://rapidapi.com:  
-        - Нажать 'Sign Up' в правом верхнем углу:  
-            ![img.png](readme_img/img.png)  
-        - Ввести имя пользователя, электронную почту и пароль:  
-            ![img_1.png](readme_img/img_1.png)  
-        - На указанную электронную почту придёт письмо с кодом, для ввода на сайте для завершения регистрации:  
-            ![img.png](readme_img/img_2.png)  
-        Необходимо ввести код.  
-        - Ввести организацию, если необходимо, и/или нажать 'Done', сняв или оставив галочку регистрации организации:  
-            ![img.png](readme_img/img_3.png)  
-        - Перейти по ссылке https://rapidapi.com/apidojo/api/hotels4/.  
-        - В открывшемся окне нажать кнопку 'Subscribe to Test'  
-            ![img.png](readme_img/img_4.png)  
-        - Выбрать свой профиль и, подходящий по количеству запросов (Requests) и стоимости, тариф:  
-            ![img.png](readme_img/img_5.png)  
-        - На странице https://rapidapi.com/apidojo/api/hotels4/ в правой области скопировать значение 'X-RapidAPI-Key'
-          и ввести в консоль:  
-             ![img.png](readme_img/img_6.png)  
+5. По запросу консоли ввести token чат-бота Telegramm (как его получить: https://web7.pro/kak-poluchit-token-bota-telegram-api/)
+   и rapidapi-key сайта https://rapidapi.com (необходимо пройти регистрацию и выбрать подписку для API https://rapidapi.com/apidojo/api/hotels4/).  
+   Как их получить, описано ниже.
 6. Открыть чат с Вашим ботом в Telegramm и проверить его работу  
 
 

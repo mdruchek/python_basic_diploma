@@ -11,9 +11,11 @@ import datetime
 from calendar import monthrange
 import math
 from typing import List, Dict
+import datetime
 
 
 token: str = modules.get_config_from_file(path='./config.ini', section='account', setting='token')
+modules.get_config_from_file(path='./config.ini', section='account', setting='x-rapidapi-key')
 my_bot: telebot.TeleBot = telebot.TeleBot(token)
 users_id: Dict = dict()
 
@@ -47,21 +49,32 @@ def history_command(message: types.Message) -> None:
     """
 
     markup = types.ReplyKeyboardRemove()
-    users_id[message.from_user.id]['survey'].reset_answers()
     file_name: str = '{users_id}.txt'.format(users_id=message.from_user.id)
     path_file: str = os.path.join('search_history', file_name)
-    my_bot.send_message(message.from_user.id, 'История поиска:')
-    with open(path_file, 'r', encoding='utf8') as file:
-        for search_str in file:
-            search_dict: Dict = json.loads(search_str)
+    if os.path.isfile(path_file):
 
-            my_bot.send_message(message.from_user.id, 'Команда: {command}\n'
-                                                      'Дата: {date}\n'.format(command=search_dict['command'],
-                                                                              date=search_dict['date']),
-                                reply_markup=markup)
+        my_bot.send_message(message.from_user.id,
+                            'История поиска:',
+                            reply_markup=markup)
 
-            for property in search_dict['search results']:
-                my_bot.send_message(message.from_user.id, property['name'])
+        with open(path_file, 'r', encoding='utf8') as file:
+            for search_str in file:
+                search_dict: Dict = json.loads(search_str)
+
+                my_bot.send_message(message.from_user.id,
+                                    'Команда: {command}\n'
+                                    'Дата: {date}\n'.format(command=search_dict['command'],
+                                                            date=search_dict['date']),
+                                    reply_markup=markup)
+
+                for property in search_dict['search results']:
+                    my_bot.send_message(message.from_user.id, property['name'])
+
+    else:
+
+        my_bot.send_message(message.from_user.id,
+                            'История пуста.',
+                            reply_markup=markup)
 
 
 @my_bot.message_handler(commands=['help', 'start'])
@@ -72,13 +85,15 @@ def help_command(message: types.Message) -> None:
     :type message: types.Message
     """
 
-    users_id[message.from_user.id]['survey'].reset_answers()
-    my_bot.send_message(message.from_user.id, 'Я могу подобрать отель для проживания.\n'
-                                              'Справка по командам:\n'
-                                              '/lowprice - вывод самых дешёвых отелей в городе\n'
-                                              '/highprice - вывод самых дорогих отелей в городе\n'
-                                              '/bestdeal - вывод отелей, наиболее подходящих по цене и расположению от центра\n'
-                                              '/history - вывод истории поиска отелей')
+    markup = types.ReplyKeyboardRemove()
+    my_bot.send_message(message.from_user.id,
+                        'Я могу подобрать отель для проживания.\n'
+                        'Справка по командам:\n'
+                        '/lowprice - вывод самых дешёвых отелей в городе\n'
+                        '/highprice - вывод самых дорогих отелей в городе\n'
+                        '/bestdeal - вывод отелей, наиболее подходящих по цене и расположению от центра\n'
+                        '/history - вывод истории поиска отелей',
+                        reply_markup=markup)
 
 
 @my_bot.message_handler(func=lambda m: True)
@@ -687,16 +702,26 @@ def send_result_request(message: types.Message, result_list: List) -> None:
                         'Вот что я нашёл для Вас:',
                         reply_markup=types.ReplyKeyboardRemove())
 
+    check_in_date = datetime.date(users_id[message.from_user.id]['survey'].check_in_date_year,
+                                  users_id[message.from_user.id]['survey'].check_in_date_month,
+                                  users_id[message.from_user.id]['survey'].check_in_date_day)
+    check_out_date = datetime.date(users_id[message.from_user.id]['survey'].check_out_date_year,
+                                   users_id[message.from_user.id]['survey'].check_out_date_month,
+                                   users_id[message.from_user.id]['survey'].check_out_date_day)
+    date_delta = (check_out_date - check_in_date).days
+
     for hotel in result_list:
         my_bot.send_message(message.from_user.id,
                             'Отель: {name}\n'
                             'Адрес: {address}\n'
                             'Расстояние до центра: {distance_value} {distance_unit}\n'
-                            'Полная стоимость: {amount}'.format(name=hotel['name'],
-                                                                address=hotel['address'],
-                                                                distance_value=hotel['distance_value'],
-                                                                distance_unit=hotel['distance_unit'],
-                                                                amount=hotel['amount']))
+                            'Полная стоимость: {amount}\n'
+                            'Стоимость за ночь: ${amount_per_night}'.format(name=hotel['name'],
+                                                                           address=hotel['address'],
+                                                                           distance_value=hotel['distance_value'],
+                                                                           distance_unit=hotel['distance_unit'],
+                                                                           amount=hotel['amount'],
+                                                                           amount_per_night=str(int(hotel['amount'][1:]) / date_delta)))
 
         if users_id[message.from_user.id]['survey'].uploading_photos.lower() == 'да' and users_id[message.from_user.id]['survey'].number_photos > 0:
             media_list: List[telebot.types.InputMediaPhoto] = []
@@ -791,5 +816,5 @@ def get_reply_keyboard_markup_day(year: int, month: int) -> types.ReplyKeyboardM
         markup.row(*row_itembt)
     return markup
 
-
+print('Бот работает...')
 my_bot.polling(non_stop=True)

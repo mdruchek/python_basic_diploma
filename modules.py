@@ -40,6 +40,7 @@ def get_config_from_file(path: str, section: str, setting: str):
         config.set(section, setting, setting_in_file)
         with open(path, 'w') as file_config:
             config.write(file_config)
+            print('Ключ принят.')
     return setting_in_file
 
 
@@ -311,9 +312,11 @@ class UserSurvey:
 
     def reset_answers(self) -> None:
         """
-        Метод для обнуления словаря с вопросами
+        Метод для обнуления словаря с вопросами и команды
         """
+
         self.__answers = dict()
+        self.__command: str = ''
 
 
 class Requests:
